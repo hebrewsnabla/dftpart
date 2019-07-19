@@ -1,0 +1,132 @@
+#INFO: **** input file is /home/wsr/dftpart/test_hfeda/watercl/test_wcl.py ****
+from dftpart import scfeda
+
+mollist = [
+#'5','6','7'
+'8','9'
+#,'c4h10','c6h14'
+]
+basislist = [
+#'6-31g',
+'6-31gss','6-311gss',
+#'6-311+gss',
+'cc-pvdz','cc-pvtz',
+'def2-svp','def2-tzvp'
+]
+for mol in mollist:
+    for basis in basislist:
+        test1 = scfeda.EDA()
+        test1.gjf = './TIP4P-'+mol+'.xyz'
+        test1.method = ['m062x',basis]
+        test1.output = 'TIP4P-'+mol.upper()+'_'+basis
+        #test1.build()
+        test1.kernel()
+
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='lw06', release='3.10.0-957.el7.x86_64', version='#1 SMP Thu Nov 8 23:39:32 UTC 2018', machine='x86_64', processor='x86_64')  Threads 48
+Python 3.7.3 (default, Mar 27 2019, 22:11:17) 
+[GCC 7.3.0]
+numpy 1.16.2  scipy 1.2.1
+Date: Fri Jul 12 16:05:06 2019
+PySCF version 1.6.2
+PySCF path  /home/wsr/pyscf
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 27
+[INPUT] num. electrons = 90
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT]  1 O      0.409858400000  -3.173040700000   0.776362000000 AA    0.774520125852  -5.996177905098   1.467111553520 Bohr
+[INPUT]  2 H      0.930140200000  -3.959017700000   0.943032200000 AA    1.757710235448  -7.481459175305   1.782072584646 Bohr
+[INPUT]  3 H      1.055265600000  -2.498074600000   0.566356600000 AA    1.994162972675  -4.720676832732   1.070258862840 Bohr
+[INPUT]  4 O     -1.237824700000   0.674557600000   1.772988900000 AA   -2.339149673222   1.274729119244   3.350463442894 Bohr
+[INPUT]  5 H     -1.511302900000   1.281201400000   1.084930100000 AA   -2.855948572261   2.421119756409   2.050220753297 Bohr
+[INPUT]  6 H     -1.499581200000  -0.187843900000   1.450531000000 AA   -2.833797769547  -0.354973525170   2.741106325191 Bohr
+[INPUT]  7 O      2.109888800000  -1.171393000000   0.166682000000 AA    3.987111985287  -2.213611954233   0.314983329895 Bohr
+[INPUT]  8 H      1.981035500000  -0.441414600000   0.772289400000 AA    3.743614538041  -0.834152701384   1.459415454905 Bohr
+[INPUT]  9 H      1.891317600000  -0.811505300000  -0.692933900000 AA    3.574072278570  -1.533522765633  -1.309455293427 Bohr
+[INPUT] 10 O     -1.867784800000  -1.727434900000   0.550687800000 AA   -3.529601731626  -3.264378859015   1.040649122139 Bohr
+[INPUT] 11 H     -1.090409000000  -2.278375700000   0.642246800000 AA   -2.060574373761  -4.305506081864   1.213670556378 Bohr
+[INPUT] 12 H     -2.600549600000  -2.312401000000   0.743308100000 AA   -4.914326517347  -4.369804580170   1.404648735171 Bohr
+[INPUT] 13 O     -1.624648700000   2.256691400000  -0.470522300000 AA   -3.070141091631   4.264528693661  -0.889158282500 Bohr
+[INPUT] 14 H     -0.681643800000   2.392680900000  -0.562612700000 AA   -1.288120096508   4.521511604478  -1.063183917202 Bohr
+[INPUT] 15 H     -2.010283600000   3.111412500000  -0.662797400000 AA   -3.798885436705   5.879717485548  -1.252505562074 Bohr
+[INPUT] 16 O     -1.452062600000  -0.209184200000  -1.725828900000 AA   -2.744000629724  -0.395300847586  -3.261343958859 Bohr
+[INPUT] 17 H     -1.650001900000  -0.808336800000  -1.006059300000 AA   -3.118051696012  -1.527535168407  -1.901176542072 Bohr
+[INPUT] 18 H     -1.662267000000   0.658466900000  -1.380535100000 AA   -3.141229375902   1.244322103091  -2.608833244349 Bohr
+[INPUT] 19 O      1.436310000000   1.004389100000   1.736078800000 AA    2.714232529974   1.898020321498   3.280713462664 Bohr
+[INPUT] 20 H      1.730434300000   1.261095700000   2.610049400000 AA    3.270046903553   2.383125489867   4.932278537585 Bohr
+[INPUT] 21 H      0.494581900000   0.862272400000   1.831907700000 AA    0.934624337167   1.629458680771   3.461803838482 Bohr
+[INPUT] 22 O      1.197965800000   0.021207800000  -2.156428600000 AA    2.263827268595   0.040076933705  -4.075059461179 Bohr
+[INPUT] 23 H      0.255977400000  -0.121982500000  -2.064850800000 AA    0.483727180078  -0.230513516990  -3.902002500089 Bohr
+[INPUT] 24 H      1.382329100000  -0.174855400000  -3.075015200000 AA    2.612223413017  -0.330428817401  -5.810936556875 Bohr
+[INPUT] 25 O      1.055203600000   2.348515500000  -0.657807200000 AA    1.994045809655   4.438051094296  -1.243075450767 Bohr
+[INPUT] 26 H      1.323832000000   2.005487000000   0.194485200000 AA    2.501679914935   3.789821176376   0.367523763281 Bohr
+[INPUT] 27 H      1.234114100000   1.635396500000  -1.270738200000 AA    2.332137655464   3.090451490072  -2.401347174023 Bohr
+
+nuclear repulsion = 618.927154606118
+number of shells = 108
+number of NR pGTOs = 369
+number of NR cGTOs = 216
+basis = 6-31gss
+ecp = {}
+CPU time:     19852.25
+
+
+******** <class 'pyscf.dft.rks.RKS'> ********
+method = RKS-RHF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-09
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /home/wsr/dftpart/test_hfeda/watercl/tmp4yhrk7pt
+max_memory 4000 MB (current use 905 MB)
+XC functionals = m062x
+small_rho_cutoff = 1e-07
+radial grids: 
+    Treutler-Ahlrichs (JCP 102, 346 (M4)) radial grids
+    
+becke partition: Becke, JCP, 88, 2547 (1988)
+pruning grids: <function nwchem_prune at 0x2b826a138378>
+grids dens level: 3
+symmetrized grids: False
+atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x2b826a1382f0>
+Set gradient conv threshold to 3.16228e-05
+tot grids = 308790
+init E= -687.298970779785
+  HOMO = -0.45455718429619  LUMO = -0.0199108700989893
+cycle= 1 E= -687.25529791023  delta_E= 0.0437  |g|= 1.45  |ddm|= 3.61
+  HOMO = -0.242734056763613  LUMO = 0.114152687012581
+cycle= 2 E= -687.31609733253  delta_E= -0.0608  |g|= 1.35  |ddm|= 1.65
+  HOMO = -0.362618985260178  LUMO = 0.0846037799404339
+cycle= 3 E= -687.631014925499  delta_E= -0.315  |g|= 0.0521  |ddm|= 0.826
+  HOMO = -0.360001045658657  LUMO = 0.0886611695406062
+cycle= 4 E= -687.631509903564  delta_E= -0.000495  |g|= 0.00884  |ddm|= 0.0327
+  HOMO = -0.36007043918286  LUMO = 0.0887794406883626
+cycle= 5 E= -687.631520840162  delta_E= -1.09e-05  |g|= 0.00671  |ddm|= 0.00977
+  HOMO = -0.360295578083869  LUMO = 0.0887042327963294
+cycle= 6 E= -687.631528683927  delta_E= -7.84e-06  |g|= 0.0006  |ddm|= 0.0043
+  HOMO = -0.360348903752535  LUMO = 0.0886886192583412
+cycle= 7 E= -687.631528764911  delta_E= -8.1e-08  |g|= 0.000172  |ddm|= 0.000598
+  HOMO = -0.360331320445718  LUMO = 0.0886859162427502
+cycle= 8 E= -687.631528769943  delta_E= -5.03e-09  |g|= 7.12e-05  |ddm|= 0.000153
+  HOMO = -0.360339468197988  LUMO = 0.0886859467946502
+cycle= 9 E= -687.63152877096  delta_E= -1.02e-09  |g|= 1.15e-05  |ddm|= 5.87e-05
+  HOMO = -0.360338428585722  LUMO = 0.0886861206385077
+cycle= 10 E= -687.63152877099  delta_E= -3.05e-11  |g|= 2.84e-06  |ddm|= 1.03e-05
+  HOMO = -0.360338733974964  LUMO = 0.088686277738769
+Extra cycle  E= -687.631528770989  delta_E= 1.59e-12  |g|= 2.76e-06  |ddm|= 3.57e-06
+converged SCF energy = -687.631528770989
+tot grids = 308790

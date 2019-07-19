@@ -1,0 +1,117 @@
+#INFO: **** input file is /home/wsr/dftpart/test_hfeda/watercl/test_wcl.py ****
+from dftpart import scfeda
+
+mollist = ['5','6','7'
+#,'8','9'
+#,'c4h10','c6h14'
+]
+basislist = [
+#'6-31g',
+'6-31gss','6-311gss',
+#'6-311+gss',
+'cc-pvdz','cc-pvtz',
+'def2-svp','def2-tzvp'
+]
+for mol in mollist:
+    for basis in basislist:
+        test1 = scfeda.EDA()
+        test1.gjf = './TIP4P-'+mol+'.xyz'
+        test1.method = ['m062x',basis]
+        test1.output = 'TIP4P-'+mol.upper()+'_'+basis
+        #test1.build()
+        test1.kernel()
+
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='lw06', release='3.10.0-957.el7.x86_64', version='#1 SMP Thu Nov 8 23:39:32 UTC 2018', machine='x86_64', processor='x86_64')  Threads 48
+Python 3.7.3 (default, Mar 27 2019, 22:11:17) 
+[GCC 7.3.0]
+numpy 1.16.2  scipy 1.2.1
+Date: Fri Jul 12 10:41:29 2019
+PySCF version 1.6.2
+PySCF path  /home/wsr/pyscf
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 15
+[INPUT] num. electrons = 50
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT]  1 O     -0.956713400000  -1.604268900000   1.343511800000 AA   -1.807926305701  -3.031628851157   2.538869347121 Bohr
+[INPUT]  2 H     -0.665024400000  -1.966281000000   2.180229700000 AA   -1.256713982153  -3.715732573936   4.120037021643 Bohr
+[INPUT]  3 H     -1.002840000000  -0.660031600000   1.493579300000 AA   -1.895092946759  -1.247278957558   2.822455822320 Bohr
+[INPUT]  4 O     -0.114545100000  -1.936524900000  -1.223526300000 AA   -0.216458867911  -3.659501694401  -2.312129613202 Bohr
+[INPUT]  5 H     -0.436304500000  -2.801371300000  -1.477973900000 AA   -0.824496011915  -5.293824530217  -2.792965890255 Bohr
+[INPUT]  6 H     -0.414222900000  -1.824853400000  -0.321331900000 AA   -0.782767835523  -3.448473143481  -0.607229286086 Bohr
+[INPUT]  7 O      0.968480300000   2.075922200000   0.127058400000 AA    1.830162524037   3.922924413905   0.240105577825 Bohr
+[INPUT]  8 H      0.989861200000   1.512821600000  -0.646693900000 AA    1.870566569333   2.858818499326  -1.222074357427 Bohr
+[INPUT]  9 H      1.886626300000   2.288372200000   0.294703600000 AA    3.565207006402   4.324396729068   0.556909091923 Bohr
+[INPUT] 10 O     -0.951491500000   1.079887900000   1.772333400000 AA   -1.798058344852   2.040692376232   3.349224727419 Bohr
+[INPUT] 11 H     -0.255133200000   1.444577900000   1.226148100000 AA   -0.482131873284   2.729856596599   2.317084097156 Bohr
+[INPUT] 12 H     -1.646161300000   1.737918600000   1.746616900000 AA   -3.110794013858   3.284190180788   3.300627585537 Bohr
+[INPUT] 13 O      1.059236200000   0.398125200000  -2.009376100000 AA    2.001666319225   0.752347591288  -3.797170510247 Bohr
+[INPUT] 14 H      0.770186100000   0.504481400000  -2.915671000000 AA    1.455440793947   0.953331680937  -5.509819659337 Bohr
+[INPUT] 15 H      0.694190300000  -0.444198100000  -1.738331800000 AA    1.311829545330  -0.839412754052  -3.284971015622 Bohr
+
+nuclear repulsion = 204.126757492735
+number of shells = 55
+number of NR pGTOs = 200
+number of NR cGTOs = 120
+basis = cc-pvdz
+ecp = {}
+CPU time:      2057.68
+
+
+******** <class 'pyscf.dft.rks.RKS'> ********
+method = RKS-RHF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-09
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /home/wsr/dftpart/test_hfeda/watercl/tmp9zubxwe8
+max_memory 4000 MB (current use 299 MB)
+XC functionals = m062x
+small_rho_cutoff = 1e-07
+radial grids: 
+    Treutler-Ahlrichs (JCP 102, 346 (M4)) radial grids
+    
+becke partition: Becke, JCP, 88, 2547 (1988)
+pruning grids: <function nwchem_prune at 0x2b291b4d6378>
+grids dens level: 3
+symmetrized grids: False
+atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x2b291b4d62f0>
+Set gradient conv threshold to 3.16228e-05
+tot grids = 171550
+init E= -381.788070938036
+  HOMO = -0.450270559718096  LUMO = -0.00601467007242407
+cycle= 1 E= -381.792096883507  delta_E= -0.00403  |g|= 1.13  |ddm|= 2.95
+  HOMO = -0.250361886754462  LUMO = 0.106235377765544
+cycle= 2 E= -381.818656628515  delta_E= -0.0266  |g|= 1.09  |ddm|= 1.28
+  HOMO = -0.370386727660864  LUMO = 0.0817533037948582
+cycle= 3 E= -382.023047939069  delta_E= -0.204  |g|= 0.0356  |ddm|= 0.635
+  HOMO = -0.367569326024272  LUMO = 0.0840980228320939
+cycle= 4 E= -382.023273651218  delta_E= -0.000226  |g|= 0.00561  |ddm|= 0.0206
+  HOMO = -0.36773265459183  LUMO = 0.0841595328678529
+cycle= 5 E= -382.02328247135  delta_E= -8.82e-06  |g|= 0.00127  |ddm|= 0.00575
+  HOMO = -0.367941871737543  LUMO = 0.0841147928648932
+cycle= 6 E= -382.023282719364  delta_E= -2.48e-07  |g|= 0.000703  |ddm|= 0.00113
+  HOMO = -0.367910275470495  LUMO = 0.0841069659096274
+cycle= 7 E= -382.02328280745  delta_E= -8.81e-08  |g|= 0.000136  |ddm|= 0.000486
+  HOMO = -0.367917856897042  LUMO = 0.0841075800574207
+cycle= 8 E= -382.023282811287  delta_E= -3.84e-09  |g|= 2.02e-05  |ddm|= 0.000105
+  HOMO = -0.36791931719061  LUMO = 0.0841076344928015
+cycle= 9 E= -382.023282811388  delta_E= -1.01e-10  |g|= 1.27e-05  |ddm|= 2.7e-05
+  HOMO = -0.367917851874665  LUMO = 0.0841077446862103
+Extra cycle  E= -382.023282811389  delta_E= -1.14e-12  |g|= 1.33e-05  |ddm|= 1.52e-05
+converged SCF energy = -382.023282811389
+tot grids = 171550
