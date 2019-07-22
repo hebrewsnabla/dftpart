@@ -1,15 +1,14 @@
 '''
-Example for path/to/pyscf/pyscf/eda
 
-Created Oct/15/2018
 '''
 
 from pyscf import gto, scf, dft, symm, qmmm
 #import edanew
 from pyscf.scf import _vhf
 #from frame_small2 import preri
-from jkeda_lk8 import preri
-from h1e import h1e
+from frame_small6 import preri
+from h1e_new import h1e
+#from h1e import h1e
 import xceda
 #from frame_small5 import preri
 from pyscf.gto import moleintor
@@ -52,20 +51,20 @@ class EDA():
         with open(self.output+'-eda.log','a') as f:
             logger.mlog(f,"method,basis: ", self.method)
         t1 = time.time()
-        atm2bas = get_atm2bas(self.mol)
-        atm_e1 = get_E1(self,atm2bas)
+        atm2bas_f, atm2bas_p = get_atm2bas(self.mol)
+        atm_e1 = get_E1(self,atm2bas_f)
         atm_enuc = get_Enuc(self)
         t2 = time.time()
         with open(self.output+'-eda.log','a') as f:
             f.write("time for E1, E_nuc: %.5f\n" %(t2-t1)) 
         if self.method[0] == 'hf':
-            atm_ej, atm_ek = get_Ejk(self,atm2bas,'jk')
+            atm_ej, atm_ek = get_Ejk(self, atm2bas_p,'jk')
             atm_E = atm_e1 + atm_enuc + atm_ej + atm_ek
             t3 = time.time()
             with open(self.output+'-eda.log','a') as f:
                 f.write("time for Ej, Ek: %.5f\n" %(t3-t2))
         elif gfea2_2.is_dft(self.method[0]):
-            atm_exc, atm_ej = xceda.get_atmexc(self,atm2bas) 
+            atm_exc, atm_ej = xceda.get_atmexc(self,atm2bas_p) 
             atm_E = atm_e1 + atm_enuc + atm_ej + atm_exc
         #atm_ehf = atm_e1 + atm_enuc + atm_ej
         #atm_E = anal(self, atm_ek, atm_exc)
@@ -79,15 +78,21 @@ class EDA():
         with open(self.output+'-eda.log','a') as f:
             f.write("tot Energy =%16.10f\n" %(totE))
             f.write("SCF Energy =%16.10f\n" %(scfE))
-            f.write("Err of totE =%16.10f\n" %(totE - scfE))
+            f.write("Err of totE =%16.10f" %(totE - scfE))
+            if (totE - scfE) < 1e-8:
+                conv = True
+                f.write('    OK\n')
+            else:
+                conv = False
+                f.write('    FAIL\n')
             for i in range(atm_E.shape[0]):
                 f.write("%s %i %16.10f\n" %(self.mol.atom_symbol(i),i+1,atm_E[i]))
-        CH3E = atm_E[:4].sum()
-        with open("CH3_anal.txt",'a') as f:
-            f.write("%s %.10f\n" % (self.output,CH3E))
+        #CH3E = atm_E[:4].sum()
+        #with open("CH3_anal.txt",'a') as f:
+        #    f.write("%s %.10f\n" % (self.output,CH3E))
         #endtime = time.time()
         #print('timeTot=',(endtime-starttime))
-        return atm_E, totE 
+        return atm_E, totE, conv
 
 def build(eda, gjf, method):
     
@@ -135,7 +140,8 @@ def get_atm2bas(mol):
     #slice = []
     #basis = []
     #shls = []
-    atm2bas = []
+    atm2bas_p = []
+    atm2bas_f = []
     #twoatom = []
     #threeatom = []
     #fouratom = []
@@ -151,10 +157,12 @@ def get_atm2bas(mol):
         startbasis = mol.aoslice_by_atom()[i, 2]
         endbasis = mol.aoslice_by_atom()[i, 3]
         basis_range = list(range(startbasis,endbasis))
-        basis_range = [item + 1 for item in basis_range]
-        atm2bas.append(basis_range)
+        basis_range_fort = [item + 1 for item in basis_range]
+        basis_range_py = [item for item in basis_range]
+        atm2bas_f.append(basis_range_fort)
+        atm2bas_p.append(basis_range_py)
     
-    return atm2bas
+    return atm2bas_f, atm2bas_p
 
 def get_bas2atm(atm2bas,nao,natm):
     bas2atm = np.zeros(nao)
@@ -238,69 +246,100 @@ def get_Enuc(eda):
             logger.mlog(f, "err_enucnuc", enucnuc_err)
     return atm_enucnuc
 
-def get_Ejk(eda, atm2bas, jk='jk'):
+def p2f(atm2bas_p):
+    # TBD
+    return atm2bas_p
+
+def get_Ejk(eda, atm2bas_p, jk='jk', jktype='bas-eq'):
+    '''
+    jk: j -> only calc E_j
+        jk -> calc E_j, E_k
+    jktype: def partition coeff for (ij|kl)
+            atom-eq : find atom label a,b,c,d of i,j,k,l, and suppose atoms are equal
+                      e.g. (ij|kl) -> from atom 1,2,3 -> coeff {1/3, 1/3, 1/3}
+            bas-eq: each basis in (ij|kl) takes 1/4
+    '''
     e_coul = []
     #vhf = []
     
     #eri_s8 = mol.intor("int2e_sph",aosym='s8')
     #eri = mol.intor("int2e_sph")   
     #print(max(atm2bas))
-    num = []
-    for i in range(len(atm2bas)):
-        num.append(len(atm2bas[i]))
-    num1 = (max(num))
-    
-    for i in range(len(atm2bas)):
-        if len(atm2bas[i])<num1:
-            atm2bas[i] = atm2bas[i] + [0]*(num1-len(atm2bas[i]))
-    singleitem = len(atm2bas)
-    # ---------------------------------------------------
-    atom_energy = []
     mol = eda.mol
-    atm_ = mol._atm.T
-    atml = np.shape(mol._atm)[0]
-    bas_ = mol._bas.T
-    basl = np.shape(mol._bas)[0]
-    env_ = mol._env
-    envl = np.shape(mol._env)[0] 
     dm = eda.dm
-    nao = len(dm)
-    nbas = mol._bas.shape[0]
-    with open(eda.output+'-eda.log','a') as f:
-        #if eda.verbose > 5:
-        #    logger.mlog(f,"atm_",atm_)
-        #    logger.mlog(f,"bas_",bas_)
-        #    logger.mlog(f,"env_",env_)
-        logger.slog(f,"nao=%d",nao)
-        logger.slog(f,"nbas=%d",nbas)
-
-    #t1 = time.time()
-    atom_ej, atom_ek = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas,singleitem,num1)
-    #t2 = time.time()
-    #print("T2-T1=",t2-t1)
-    #atom_energy = np.array(atom_energy)
-    ##print("Atom_energy=",atom_energy)
-    with open(eda.output+'-eda.log','a') as f:
+    if jktype=='bas-eq':
+        vj,vk = scf.hf.get_jk(mol,dm)
+        atom_ej = []
+        atom_ek  =[]
+        for i in range(mol.natm):
+            ej = np.einsum('ij,ji',dm[atm2bas_p[i]],vj[:,atm2bas_p[i]])*.5
+            atom_ej.append(ej)
+            if jk=='jk':
+                ek = np.einsum('ij,ji',dm[atm2bas_p[i]],-0.5*vk[:,atm2bas_p[i]])*.5
+                atom_ek.append(ek)
+        with open(eda.output+'-eda.log','a') as f:
+            logger.log(f,"Atom_ej=",atom_ej)
+            if jk=='jk':
+                logger.log(f,"Atom_ek=",atom_ek)
         if jk=='jk':
-            atom_ej = np.array(atom_ej)[0:mol.natm]
-            atom_ek = np.array(atom_ek)[0:mol.natm]
-            logger.log(f,"Atom_ej=",atom_ej)
-            logger.log(f,"Atom_ek=",atom_ek)
-            if eda.verbose > 5:
-                tot_aej = atom_ej.sum()
-                tot_aek = atom_ek.sum()
-                ej_err = tot_aej - 0.5*np.einsum('ij,ji',dm,eda.mf.get_j(mol,dm))
-                ek_err = tot_aek - 0.5*(-0.5)*np.einsum('ij,ji',dm,eda.mf.get_k(mol,dm))
-                logger.mlog(f, "err_ej,ek: ",(ej_err,ek_err))
-            return atom_ej, atom_ek
+            return np.array(atom_ej), np.array(atom_ek)
         elif jk=='j':
-            atom_ej = np.array(atom_ej)[0:mol.natm]
-            logger.log(f,"Atom_ej=",atom_ej)
-            if eda.verbose > 5:
-                tot_aej = atom_ej.sum()
-                ej_err = tot_aej - np.einsum('ij,ji',dm,eda.mf.get_j(mol,dm))
-                logger.mlog(f, "err_ej: ",(ej_err))
-            return atom_ej
+            return np.array(atom_ej)
+    elif jktype=='atom-eq':
+        atm2bas_f = p2f(atm2bas_p)
+        num = []
+        for i in range(len(atm2bas_f)):
+            num.append(len(atm2bas_f[i]))
+        num1 = (max(num))
+        
+        for i in range(len(atm2bas_f)):
+            if len(atm2bas_f[i])<num1:
+                atm2bas_f[i] = atm2bas_f[i] + [0]*(num1-len(atm2bas_f[i]))
+        singleitem = len(atm2bas_f)
+        # ---------------------------------------------------
+        atm_ = mol._atm.T
+        atml = np.shape(mol._atm)[0]
+        bas_ = mol._bas.T
+        basl = np.shape(mol._bas)[0]
+        env_ = mol._env
+        envl = np.shape(mol._env)[0] 
+        nao = len(dm)
+        nbas = mol._bas.shape[0]
+        with open(eda.output+'-eda.log','a') as f:
+            #if eda.verbose > 5:
+            #    logger.mlog(f,"atm_",atm_)
+            #    logger.mlog(f,"bas_",bas_)
+            #    logger.mlog(f,"env_",env_)
+            logger.slog(f,"nao=%d",nao)
+            logger.slog(f,"nbas=%d",nbas)
+
+        #t1 = time.time()
+        atom_ej, atom_ek = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
+        #t2 = time.time()
+        #print("T2-T1=",t2-t1)
+        #atom_energy = np.array(atom_energy)
+        ##print("Atom_energy=",atom_energy)
+        with open(eda.output+'-eda.log','a') as f:
+            if jk=='jk':
+                atom_ej = np.array(atom_ej)[0:mol.natm]
+                atom_ek = np.array(atom_ek)[0:mol.natm]
+                logger.log(f,"Atom_ej=",atom_ej)
+                logger.log(f,"Atom_ek=",atom_ek)
+                if eda.verbose > 5:
+                    tot_aej = atom_ej.sum()
+                    tot_aek = atom_ek.sum()
+                    ej_err = tot_aej - 0.5*np.einsum('ij,ji',dm,eda.mf.get_j(mol,dm))
+                    ek_err = tot_aek - 0.5*(-0.5)*np.einsum('ij,ji',dm,eda.mf.get_k(mol,dm))
+                    logger.mlog(f, "err_ej,ek: ",(ej_err,ek_err))
+                return atom_ej, atom_ek
+            elif jk=='j':
+                atom_ej = np.array(atom_ej)[0:mol.natm]
+                logger.log(f,"Atom_ej=",atom_ej)
+                if eda.verbose > 5:
+                    tot_aej = atom_ej.sum()
+                    ej_err = tot_aej - np.einsum('ij,ji',dm,eda.mf.get_j(mol,dm))
+                    logger.mlog(f, "err_ej: ",(ej_err))
+                return atom_ej
 
 
 
