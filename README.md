@@ -1,9 +1,7 @@
-# dftpart
-
-DFT Energy Decomposition
+# DFT Energy Decomposition
 ========================
 
 * Prerequisites
-    -- PySCF
-    -- QCKit
-    -- simplejson
+    - PySCF
+    - QCKit
+    - simplejson
