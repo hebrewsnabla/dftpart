@@ -6,7 +6,7 @@ from pyscf import gto, scf, dft, symm, qmmm
 #import edanew
 from pyscf.scf import _vhf
 #from frame_small2 import preri
-from frame_small6 import preri
+#from frame_small6 import preri
 from h1e_new import h1e
 #from h1e import h1e
 import xceda
@@ -17,8 +17,8 @@ import numpy as np
 import os,sys,subprocess
 import time
 import copy
-from gfea import gfea2_2
-from gfea import logger
+#from gfea import gfea2_2
+from QCKit import logger, dft_kit, gjf_kit
 class EDA():
     def __init__(self):
         self.mol = None
@@ -63,7 +63,7 @@ class EDA():
             t3 = time.time()
             with open(self.output+'-eda.log','a') as f:
                 f.write("time for Ej, Ek: %.5f\n" %(t3-t2))
-        elif gfea2_2.is_dft(self.method[0]):
+        elif dft_kit.is_dft(self.method[0]):
             atm_exc, atm_ej = xceda.get_atmexc(self,atm2bas_p) 
             atm_E = atm_e1 + atm_enuc + atm_ej + atm_exc
         #atm_ehf = atm_e1 + atm_enuc + atm_ej
@@ -101,7 +101,7 @@ def build(eda, gjf, method):
     mol = gto.Mole()
     #with open(xyznam) as f:
     #   geom = f.read()
-    mol.atom, coords, charges, charge, spin = gfea2_2.gjf_parser(gjf)
+    mol.atom, coords, charges, charge, spin = gjf_kit.gjf_parser(gjf)
     
     #mol.cart=True
     mol.basis = method[1]
@@ -120,7 +120,7 @@ def build(eda, gjf, method):
     
     if method[0] == 'hf':
         mf = scf.RHF(mol)
-    elif gfea2_2.is_dft(method[0]):
+    elif dft_kit.is_dft(method[0]):
         mf = dft.RKS(mol)
         mf.xc = method[0]
     mf.kernel()

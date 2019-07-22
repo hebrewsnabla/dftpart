@@ -4,7 +4,7 @@ from pyscf import dft
 import numpy as np
 import time
 import scfeda
-from gfea import logger
+from QCKit import logger
 
 ok = ['FAIL','OK']
 TOT_THRESH = 1e-9
