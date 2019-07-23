@@ -1,0 +1,105 @@
+#INFO: **** input file is /home/wsr/dftpart/test_hfeda/test_c4h10_basis.py ****
+from dftpart import scfeda
+
+mollist = [
+#'c12h26'
+'c2h6','c4h10','c6h14'
+]
+basislist = [
+'6-31g',
+'6-31gss','6-311gss','6-311+gss',
+'cc-pvdz','cc-pvtz',
+'def2-svp','def2-tzvp']
+for mol in mollist:
+    for basis in basislist:
+        test1 = scfeda.EDA()
+        test1.gjf = './'+mol+'.xyz'
+        test1.method = ['m062x',basis]
+        test1.output = mol.upper()+'_'+basis
+        #test1.build()
+        test1.kernel()
+        
+
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='lw06', release='3.10.0-957.el7.x86_64', version='#1 SMP Thu Nov 8 23:39:32 UTC 2018', machine='x86_64', processor='x86_64')  Threads 48
+Python 3.7.3 (default, Mar 27 2019, 22:11:17) 
+[GCC 7.3.0]
+numpy 1.16.2  scipy 1.2.1
+Date: Fri Jul 12 09:06:08 2019
+PySCF version 1.6.2
+PySCF path  /home/wsr/pyscf
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 8
+[INPUT] num. electrons = 18
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT]  1 C     -2.749648430000  -1.202428580000  -0.015740650000 AA   -5.196082471540  -2.272260700550  -0.029745517523 Bohr
+[INPUT]  2 H     -2.392994000000  -2.211238580000  -0.015740650000 AA   -4.522103277727  -4.178635312272  -0.029745517523 Bohr
+[INPUT]  3 H     -2.392975590000  -0.698030390000  -0.889392160000 AA   -4.522068487869  -1.319086263723  -1.680707599735 Bohr
+[INPUT]  4 H     -3.819648430000  -1.202415400000  -0.015740650000 AA   -7.218089424825  -2.272235793959  -0.029745517523 Bohr
+[INPUT]  5 C     -2.236306210000  -0.476472310000   1.241664320000 AA   -4.226006267564  -0.900402171839   2.346405503444 Bohr
+[INPUT]  6 H     -1.166308020000  -0.478179370000   1.242642670000 AA   -2.204002734684  -0.903628047717   2.348254316998 Bohr
+[INPUT]  7 H     -2.591362770000   0.532900710000   1.240686930000 AA   -4.896965924694   1.007036393486   2.344558504027 Bohr
+[INPUT]  8 H     -2.594575170000  -0.979740300000   2.115314520000 AA   -4.903036480897  -1.851440840199   3.997365110116 Bohr
+
+nuclear repulsion = 42.6703219875163
+number of shells = 46
+number of NR pGTOs = 140
+number of NR cGTOs = 98
+basis = def2-tzvp
+ecp = {}
+CPU time:      2787.37
+
+
+******** <class 'pyscf.dft.rks.RKS'> ********
+method = RKS-RHF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-09
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /home/wsr/dftpart/test_hfeda/tmpnjs0jqzh
+max_memory 4000 MB (current use 409 MB)
+XC functionals = m062x
+small_rho_cutoff = 1e-07
+radial grids: 
+    Treutler-Ahlrichs (JCP 102, 346 (M4)) radial grids
+    
+becke partition: Becke, JCP, 88, 2547 (1988)
+pruning grids: <function nwchem_prune at 0x2abf6e3f7378>
+grids dens level: 3
+symmetrized grids: False
+atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x2abf6e3f72f0>
+Set gradient conv threshold to 3.16228e-05
+tot grids = 87948
+init E= -79.8805333161176
+  HOMO = -0.434092933463629  LUMO = 0.0262952442678337
+cycle= 1 E= -79.7528305821965  delta_E= 0.128  |g|= 0.464  |ddm|= 1.68
+  HOMO = -0.318820737325346  LUMO = 0.089886711561049
+cycle= 2 E= -79.7647282606567  delta_E= -0.0119  |g|= 0.387  |ddm|= 0.506
+  HOMO = -0.412030393388925  LUMO = 0.0747936085559665
+cycle= 3 E= -79.8021536539781  delta_E= -0.0374  |g|= 0.0142  |ddm|= 0.241
+  HOMO = -0.410225884231084  LUMO = 0.0759661347850164
+cycle= 4 E= -79.802207219681  delta_E= -5.36e-05  |g|= 0.00353  |ddm|= 0.0152
+  HOMO = -0.409668173860518  LUMO = 0.0761180112582771
+cycle= 5 E= -79.8022103901282  delta_E= -3.17e-06  |g|= 0.000324  |ddm|= 0.00325
+  HOMO = -0.409682525870954  LUMO = 0.0761072566108228
+cycle= 6 E= -79.8022104290797  delta_E= -3.9e-08  |g|= 3.63e-05  |ddm|= 0.00066
+  HOMO = -0.409682727584695  LUMO = 0.0761093962886438
+cycle= 7 E= -79.8022104296899  delta_E= -6.1e-10  |g|= 3.32e-06  |ddm|= 9.38e-05
+  HOMO = -0.409683737609679  LUMO = 0.0761092462572151
+Extra cycle  E= -79.8022104296939  delta_E= -4.02e-12  |g|= 1.36e-06  |ddm|= 5.55e-06
+converged SCF energy = -79.8022104296939
+tot grids = 87948
