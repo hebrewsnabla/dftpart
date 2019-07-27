@@ -41,15 +41,15 @@ def get_atmexc(eda,atm2bas):
     mol = ks.mol
     grids = gen_grid_sep.Grids(ks.mol)
     atom_exc = numint_sep.nr_rks_sep(ni, mol, grids, ks.xc, dm)[3]
-    with open(eda.output+'-eda.log','a') as f:
-        logger.log(f, "Atom_exc(pure):", atom_exc)
-        if eda.verbose > 5:
-            tot_aexc = atom_exc.sum()
-            err_exc = tot_aexc - dft.numint.nr_rks(ni,mol,ks.grids,ks.xc,dm)[1]
-            logger.mlog(f,"err_exc",err_exc)
+    #with open(eda.output+'-eda.log','a') as f:
+    logger.log(eda.stdout, "Atom_exc(pure):", atom_exc)
+    if eda.verbose > 5:
+        tot_aexc = atom_exc.sum()
+        err_exc = tot_aexc - dft.numint.nr_rks(ni,mol,ks.grids,ks.xc,dm)[1]
+        logger.mlog(eda.stdout,"err_exc",err_exc)
     t2 = time.time()
-    with open(eda.output+'-eda.log','a') as f:
-        f.write("time for Exc: %.5f\n" %(t2-t1))
+    #with open(eda.output+'-eda.log','a') as f:
+    logger.slog(eda.stdout, "time for Exc: %.5f\n", (t2-t1))
     omega, alpha, hyb = ni.rsh_and_hybrid_coeff(ks.xc, mol.spin)
     if ks.omega is not None: omega = ks.omega
     if abs(hyb) > 1e-10:
@@ -58,16 +58,16 @@ def get_atmexc(eda,atm2bas):
         #if abs(omega) > 1e-10:
         #    eklr = get_eklr(mol, dm, omega, hermi=1)*(alpha-hyb)
         #    atom_exc += eklr
-        with open(eda.output+'-eda.log','a') as f:
-            logger.log(f, "Atom_exc(hydrid):", atom_exc)
+        #with open(eda.output+'-eda.log','a') as f:
+        logger.log(eda.stdout, "Atom_exc(hydrid):", atom_exc)
         t3 = time.time()
-        with open(eda.output+'-eda.log','a') as f:
-            f.write("time for Ej, Ek: %.5f\n" %(t3-t2))
+        #with open(eda.output+'-eda.log','a') as f:
+        logger.slog(eda.stdout, "time for Ej, Ek: %.5f\n", (t3-t2))
     else:
         atom_ej = scfeda_get_Ejk(eda,atm2bas,'j')
         t3 = time.time()
-        with open(eda.output+'-eda.log','a') as f:
-            f.write("time for Ej: %.5f\n" %(t3-t2))
+        #with open(eda.output+'-eda.log','a') as f:
+        logger.slog(eda.stdout, "time for Ej: %.5f\n", (t3-t2))
     return atom_exc, atom_ej
 """
 def get_eklr(mol, dm, omega, hermi):
