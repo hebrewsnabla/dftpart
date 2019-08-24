@@ -784,40 +784,40 @@ def nr_rks_sep(ni, mol, grids, xc_code, dms, relativity=0, hermi=0,
             #    nelec[idm] += (rho * np.hstack(weight)).sum()
             #elif xctype == 'GGA':
             #    nelec[idm] += (rho[0] * np.hstack(weight)).sum()
-            if xctype in ['GGA','MGGA']: rho = rho[0]            
+            if xctype in ['GGA','MGGA']: rho = rho[0]
             gridbegin = 0
-            print('rho shape', rho.shape)
-            print('wt shape', weight.shape)
+            #print('rho shape', rho.shape)
+            #print('wt shape', weight.shape)
             for i in range(len(grids.nums_grids)):
                 gridend = gridbegin + grids.nums_grids[i]
                 begin = gridbegin - tot_blksize
                 end = gridend - tot_blksize
                 if begin >= 0 and end <= weight.size:
                     #print(wt_sep)
-                    rho_sep = rho[begin:end] 
+                    rho_sep = rho[begin:end]
                     #print(wt_sep.shape, rho_sep.shape)
                     den_sep = rho_sep * weight[begin:end]
                     exc_sep = exc[begin:end]
-                    print(den_sep.shape, exc_sep.shape,begin,end)
+                    #print(den_sep.shape, exc_sep.shape,begin,end)
                     #print(wt_sep.shape)
                 elif begin >=0 and end > weight.size:
                     rho_sep = rho[begin:]
                     #print(wt_sep.shape, rho_sep.shape)
                     den_sep = rho_sep * weight[begin:]
                     exc_sep = exc[begin:]
-                    print(den_sep.shape, exc_sep.shape,begin)
+                    #print(den_sep.shape, exc_sep.shape,begin)
                     #print(wt_sep.shape)
                 elif begin < 0 and end >= 0:
                     rho_sep = rho[0:end]
                     #print(wt_sep.shape, rho_sep.shape)
                     den_sep = rho_sep * weight[0:end]
                     exc_sep = exc[0:end]
-                    print(den_sep.shape, exc_sep.shape,end)
+                    #print(den_sep.shape, exc_sep.shape,end)
                     #print(wt_sep.shape)
                 else:
                     den_sep = np.zeros(1)
                     exc_sep = np.zeros(1)
-                print(i,np.dot(den_sep, exc_sep))
+                #print(i,np.dot(den_sep, exc_sep))
                 excsum_sep[idm,i] += np.dot(den_sep, exc_sep)
                 excsum[idm] += excsum_sep[idm][i]
                 gridbegin += grids.nums_grids[i]
@@ -1926,7 +1926,7 @@ class NumInt(object):
             coords = grids.coords[ip0:ip1]
             weight = grids.weights[ip0:ip1]
             non0 = non0tab[ip0//BLKSIZE:]
-            print('blksize: ', blksize)
+            #print('blksize: ', blksize)
             ao = self.eval_ao(mol, coords, deriv=deriv, non0tab=non0, out=buf)
             yield ao, non0, weight, coords
 

@@ -1,4 +1,5 @@
-
+from pyscf import gto, lib, df
+import numpy as np
 
 def RC_inter(inputstyle, submf, dm_tot, fraglabels=[], atomlist=[], spinlist=[],
              chglist=[], method='qmmm', coords=[], charges=[]):
@@ -40,12 +41,13 @@ def inter_elecbg(mol, dm, coords, charges):
     #max_memory = mol.max_memory - lib.current_memory()[0]
     #blksize = int(min(max_memory * 1e6 / 8 / nao**2, 200))
     #print(coords,'\n',len(coords))
-    vc = np.zeros(nao, nao) 
-    for i in lib.prange(0, charges.size):
+    vc = np.zeros((nao, nao))
+    for i in range(0, charges.size):
         fakemol = gto.fakemol_for_charges(coords[i:i+1])
         j3c = df.incore.aux_e2(mol, fakemol, intor=intor, aosym='s2ij')
-        v = j3c * (-charges[i]))
+        v = np.einsum('xk,k->x', j3c, -charges[i:i+1])
         v = lib.unpack_tril(v)
+        #print(vc.shape, v.shape)
         vc += v
     #E = np.einsum('ij,ji', v, dm)
     #print("inter_elecbg: %f" % E)

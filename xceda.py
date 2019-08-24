@@ -40,6 +40,8 @@ def get_atmexc(eda,atm2bas):
     ni = ks._numint
     mol = ks.mol
     grids = gen_grid_sep.Grids(ks.mol)
+    if 'ultrafine' in eda.method:
+        grids.atom_grid = (99, 590)
     atom_exc = numint_sep.nr_rks_sep(ni, mol, grids, ks.xc, dm)[3]
     #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout, "Atom_exc(pure):", atom_exc)
@@ -64,7 +66,7 @@ def get_atmexc(eda,atm2bas):
         #with open(eda.output+'-eda.log','a') as f:
         logger.slog(eda.stdout, "time for Ej, Ek: %.5f\n", (t3-t2))
     else:
-        atom_ej = scfeda_get_Ejk(eda,atm2bas,'j')
+        atom_ej = scfeda.get_Ejk(eda,atm2bas,'j')
         t3 = time.time()
         #with open(eda.output+'-eda.log','a') as f:
         logger.slog(eda.stdout, "time for Ej: %.5f\n", (t3-t2))
