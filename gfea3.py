@@ -146,7 +146,8 @@ class GFEA():
             #num_frag = len(atomlist_tot_frg)
             #logger.mlog(self.stdout, "num_frag", num_frag)
             lab = labc.labc_parser(self.labc)
-            self.chglist = cha_parser(self.cha)
+            if ('charge' in self.method) or ('qmmm' in self.method):
+                self.chglist = cha_parser(self.cha)
             for i in range(self.num_subsys):
                 logger.slog(self.stdout, "## Do EDA on subsys %d ############", i+1)
 
@@ -167,19 +168,23 @@ class GFEA():
                     if label != 0:
                         cen_intot.append(label)
                         cen_insub.append(atomlist_lab.index(label)+1)
-                        molchgs[atomlist_lab.index(label)] = self.chglist[label-1]
+                        if 'charge' in self.method:
+                            molchgs[atomlist_lab.index(label)] = self.chglist[label-1]
                     else:
-                        molchgs[atomlist_lab.index(label)] = 0.0
+                        if 'charge' in self.method:
+                            molchgs[atomlist_lab.index(label)] = 0.0
 
                 logger.mlog(self.stdout, "atomlist_lab", atomlist_lab)
                 logger.mlog(self.stdout, "cen_intot", cen_intot)
                 logger.mlog(self.stdout, "cen_insub", cen_insub)
-                logger.log(self.stdout, "molchgs", molchgs)
+                if 'charge' in self.method:
+                    logger.log(self.stdout, "molchgs", molchgs)
 
                 subeda = scfeda.EDA()
                 subeda.method = self.method
                 subeda.gjf = self.gjflist[i]
-                subeda.molchgs = molchgs
+                if 'charge' in self.method:
+                    subeda.molchgs = molchgs
                 subeda.output = subeda.gjf[:-4]
                 subatm_E, subE, conv = subeda.kernel()
                 logger.log(self.stdout, "subatm_E", subatm_E)
