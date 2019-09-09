@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# main
+ main_chk='0.chk'
+ main_nproc=6
+ main_method='hf'
+ main_basis='6-31g(d)'
+ main_geom='connectivity'
+ main_5d=true
+ main_7f=true
+#end
+
+#lsqc
+ lsqc_dis=3.0
+ lsqc_frag='conn'
+ lsqc_charge='none'
+#end
+
+# main
+ main_charge=0
+ main_multiplicity=1
+#end
+

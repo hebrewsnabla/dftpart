@@ -65,12 +65,12 @@ def inter_nucbg(mol, coords, charges):
     return nuc
 
 def inter_bgbg(coords1, charges1, coords2, charges2):
-    E = 0.0
+    E = np.zeros(len(charges1))
     chg1 = len(coords1)
     chg2 = len(coords2)
     for i in range(chg1):
         for j in range(chg2):
             r = np.linalg.norm(coords1[i] - coords2[j])
-            E += charges1[i] * charges2[j] / r
+            E[i] += charges1[i] * charges2[j] / r
     return E
 

@@ -1,5 +1,4 @@
 # DFT Energy Decomposition
-========================
 
 * Prerequisites
     - PySCF

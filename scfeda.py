@@ -6,8 +6,8 @@ from pyscf import gto, scf, dft, symm, qmmm
 #import edanew
 from pyscf.scf import _vhf
 #from frame_small2 import preri
-#from frame_small6 import preri
-from h1e_new import h1e, bgh1e
+from new_eda import preri
+from h1e_new import h1e, bgh1e, h1e_inter
 #from h1e import h1e
 import xceda
 #from frame_small5 import preri
@@ -57,6 +57,7 @@ class EDA():
         self.verbose = 4
         self.built = False
         self.anal = False
+        self.showinter = False
         ### GFEA ####
         self.molchgs = None # mol charges
         #self.envchgs = None # env frag charges
@@ -71,28 +72,47 @@ class EDA():
             self.build()
         os.system("echo '' > "+self.output+'-eda.log')
         self.stdout = open(self.output+'-eda.log','a')
+        if self.showinter:
+            self.stdout_inter = open(self.output+'-inter.log','a')
         #with open(self.output+'-eda.log','a') as f:
         logger.mlog(self.stdout,"method,basis: ", self.method)
         t1 = time.time()
         atm2bas_f, atm2bas_p = get_atm2bas(self.mol)
-        atm_e1 = get_E1(self,atm2bas_f)
-        atm_enuc = get_Enuc(self)
+        if self.showinter:
+            atm_e1, e1_1, e1_2, e1_3 = get_E1(self,atm2bas_f)
+        else:
+            atm_e1 = get_E1(self,atm2bas_f)
+        atm_enuc, enuc1, enuc2 = get_Enuc(self)
         t2 = time.time()
         #with open(self.output+'-eda.log','a') as f:
         logger.slog(self.stdout,"time for E1, E_nuc: %.5f\n", (t2-t1))
         if self.method[0] == 'hf':
-            atm_ej, atm_ek = get_Ejk(self, atm2bas_p,'jk')
-            atm_E = atm_e1 + atm_enuc + atm_ej + atm_ek
+            if self.showinter:
+                atm_ejk, ejk1, ejk2, ejk3, ejk4 = get_Ejk(self, atm2bas_p,'jk')
+                RR_inter = eda_inter.get_RR_inter(e1_1+enuc1+ejk1,e1_2+enuc2+ejk2,e1_3+ejk3,ejk4)
+            else:
+                atm_ej, atm_ek = get_Ejk(self, atm2bas_p,'jk')
+                atm_ejk = atm_ej + atm_ek
+            atm_E = atm_e1 + atm_enuc + atm_ejk
             t3 = time.time()
             #with open(self.output+'-eda.log','a') as f:
             logger.slog(self.stdout,"time for Ej, Ek: %.5f\n", (t3-t2))
         elif dft_kit.is_dft(self.method[0]):
-            atm_exc, atm_ej = xceda.get_atmexc(self,atm2bas_p)
+            if self.showinter:
+                atm_exc, atm_ej, ejxc1, ejxc2, ejxc3, ejxc4 = xceda.get_atmexc(self,atm2bas_p)
+                RR_inter = eda_inter.get_RR_inter(e1_1+enuc1+ejxc1,e1_2+enuc2+ejxc2,e1_3+ejxc3,ejxc4)
+            else:
+                atm_exc, atm_ej = xceda.get_atmexc(self,atm2bas_p)
             atm_E = atm_e1 + atm_enuc + atm_ej + atm_exc
         if 'charge' in self.method:
-            bg_corrxn, bg_corrxn_fake = get_bg_corrxn(self, atm2bas_f, 'charge')
+            if self.showinter:
+                bg_corrxn, bg_corrxn_fake, bg1,bg2,bg3 = get_bg_corrxn(self, atm2bas_f, 'charge')
+                RC_inter = eda_inter.get_RC_inter(bg1,bg2,bg3)
+            else:
+                bg_corrxn, bg_corrxn_fake = get_bg_corrxn(self, atm2bas_f, 'charge')
             atm_E += bg_corrxn
         elif 'qmmm' in self.method:
+            # show inter TBD
             bg_corrxn, bg_corrxn_fake = get_bg_corrxn(self, atm2bas_f, 'qmmm')
             atm_E += bg_corrxn
         #atm_ehf = atm_e1 + atm_enuc + atm_ej
@@ -121,9 +141,12 @@ class EDA():
 
         for i in range(atm_E.shape[0]):
             logger.slog(self.stdout,"%s %i %16.10f", self.mol.atom_symbol(i),i+1,atm_E[i])
-        #endtime = time.time()
-        #print('timeTot=',(endtime-starttime))
-        return atm_E, totE, conv
+        inter_terms = {}
+        if self.showinter: 
+            inter_terms = RR_inter + RC_inter
+            return atm_E, totE, conv, inter_terms
+        else:
+            return atm_E, totE, conv
 
 def build(eda, gjf, method):
 
@@ -224,6 +247,10 @@ def get_bg_corrxn(eda, atm2bas, charge='charge'):
     #cen = eda.cen
     #env = eda.env
     bg_corrxn = np.zeros(mol.natm)
+    if eda.showinter:
+        bg1 = np.zeros(mol.natm)
+        bg2 = np.zeros((mol.natm, mol.natm))
+        bg3 = np.zeros((mol.natm, mol.natm, mol.natm))
     vchg = bg.inter_elecbg(mol, dm, bgcoords, bgchgs)
     bas2atm = get_bas2atm(atm2bas,nao,mol.natm)
     if charge=='charge':
@@ -242,7 +269,10 @@ def get_bg_corrxn(eda, atm2bas, charge='charge'):
     bg_corrxn = atom_elecbg + atom_nucbg
     logger.log(eda.stdout,"atom_bg_correction=",bg_corrxn)
     bg_corrxn_fake = 2*np.asarray(bgh1e(dm,bas2atm,vchg,mol.natm,nao))[0:mol.natm] + bg.inter_nucbg(mol, bgcoords, bgchgs)
-    return bg_corrxn, bg_corrxn_fake
+    if eda.showinter:
+        return bg_corrxn, bg_corrxn_fake, bg1, bg2, bg3
+    else:
+        return bg_corrxn, bg_corrxn_fake
 
 def get_E1(eda, atm2bas):
     #atom_kinE = []
@@ -252,6 +282,9 @@ def get_E1(eda, atm2bas):
     bas2atm = get_bas2atm(atm2bas,nao,mol.natm)
     kinmat = mol.intor_symmetric('int1e_kin')
     atom_kin = np.zeros(mol.natm)
+    if eda.showinter:
+        kin1 = np.zeros(mol.natm)
+        kin2 = np.zeros((mol.natm, mol.natm))
     for i in range(nao):
         for j in range(nao):
             #print(dm,kin)
@@ -260,9 +293,17 @@ def get_E1(eda, atm2bas):
             b = int(bas2atm[j])
             atom_kin[a] = atom_kin[a] + kin
             atom_kin[b] = atom_kin[b] + kin
+            if eda.showinter:
+                if a==b:
+                    kin1[a] = kin
+                else:
+                    kin2[a,b] = kin
     atom_kin = atom_kin/2
     #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout,"atom_kinE=",atom_kin)
+    if eda.showinter:
+        logger.mlog(eda.stdout_inter,"kin1",kin1)
+        logger.mlog(eda.stdout_inter,"kin2",kin2)
 
     fakeatm = []
     for n in range(mol.natm):
@@ -279,9 +320,20 @@ def get_E1(eda, atm2bas):
         int1enuc.append(int1en)
     #e1 = 0.0
     #atom_h1E = np.zeros(atom_number)
-    atom_1enuc = np.asarray(h1e(dm,bas2atm,int1enuc,mol.natm,nao))[0:mol.natm]
+    if eda.showinter:
+        atom_1enuc, e1_1, e1_2, e1_3 = h1e_inter(dm,bas2atm,int1enuc,mol.natm,nao)
+        atom_1enuc = np.asarray(atom_1enuc)[0:mol.natm]
+        e1_1 = np.asarray(e1_1) + kin1
+        e1_2 = np.asarray(e1_2) + kin2
+        e1_3 = np.asarray(e1_3)
+    else:
+        atom_1enuc = np.asarray(h1e(dm,bas2atm,int1enuc,mol.natm,nao))[0:mol.natm]
     #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout,"atom_1enuc=",atom_1enuc)
+    if eda.showinter:
+        logger.mlog(eda.stdout_inter,"e1_1",e1_1)
+        logger.mlog(eda.stdout_inter,"e1_2",e1_2)
+        logger.mlog(eda.stdout_inter,"e1_3",e1_3)
     atm_e1 = atom_kin + atom_1enuc
     #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout,"atom_e1=",atm_e1)
@@ -292,12 +344,15 @@ def get_E1(eda, atm2bas):
         a1enuc_err = tot_a1enuc - np.einsum('ij,ji',dm,moleintor.getints("int1e_nuc_sph",mol._atm,mol._bas, mol._env))
         logger.mlog(eda.stdout,"kin_err: ",kin_err)
         logger.mlog(eda.stdout,"1enuc_err: ",a1enuc_err)
-
+    if eda.showinter: atm_e1 = atm_e1, e1_1, e1_2, e1_3
     return atm_e1
 
 def get_Enuc(eda):
     mol = eda.mol
     charges = mol.atom_charges()
+    if True: #eda.showinter:
+        enuc1 = np.zeros(mol.natm)
+        enuc2 = np.zeros((mol.natm, mol.natm))
     #coords = mol.atom_coords()
     rr = inter_distance(mol)
     #print(rr)
@@ -307,17 +362,22 @@ def get_Enuc(eda):
     #    logger.warn(mol, 'Atoms %s have the same coordinates', atm_idx)
     #    raise RuntimeError('Ill geometry')
     atm_enucnuc = np.einsum('i,ij,j->i', charges, 1./rr, charges) * .5
-    #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout,"atom_enucnuc=",atm_enucnuc)
     if eda.anal:
         tot_enucnuc = atm_enucnuc.sum()
         enucnuc_err = tot_enucnuc - np.einsum('i,ij,j', charges, 1./rr, charges) * .5
         logger.mlog(eda.stdout, "err_enucnuc", enucnuc_err)
+    atm_enucnuc = atm_enucnuc, enuc1, enuc2
     return atm_enucnuc
 
 def p2f(atm2bas_p):
-    # TBD
-    return atm2bas_p
+    atm2bas_f = []
+    for item in atm2bas_p:
+        item_f = []
+        for j in item:
+            item_f.append(j+1)
+        atm2bas_f.append(item_f)
+    return atm2bas_f
 
 def get_Ejk(eda, atm2bas_p, jk='jk', jktype='bas-eq'):
     '''
@@ -328,9 +388,10 @@ def get_Ejk(eda, atm2bas_p, jk='jk', jktype='bas-eq'):
                       e.g. (ij|kl) -> from atom 1,2,3 -> coeff {1/3, 1/3, 1/3}
             bas-eq: each basis in (ij|kl) takes 1/4
     '''
-    e_coul = []
+    #e_coul = []
     mol = eda.mol
     dm = eda.dm
+    
     if jktype=='bas-eq':
         vj,vk = scf.hf.get_jk(mol,dm)
         atom_ej = []
@@ -346,9 +407,9 @@ def get_Ejk(eda, atm2bas_p, jk='jk', jktype='bas-eq'):
         if jk=='jk':
             logger.log(eda.stdout,"Atom_ek=",atom_ek)
         if jk=='jk':
-            return np.array(atom_ej), np.array(atom_ek)
+            atm_ejk = np.array(atom_ej), np.array(atom_ek)
         elif jk=='j':
-            return np.array(atom_ej)
+            atm_ejk = np.array(atom_ej)
     elif jktype=='atom-eq':
         atm2bas_f = p2f(atm2bas_p)
         num = []
@@ -401,5 +462,12 @@ def get_Ejk(eda, atm2bas_p, jk='jk', jktype='bas-eq'):
                 logger.mlog(eda.stdout, "err_ej: ",(ej_err))
                 return atom_ej
 
-
+    if eda.showinter==True:
+        ejk1 = np.zeros(mol.natm)
+        ejk2 = np.zeros((mol.natm, mol.natm))
+        ejk3 = np.zeros((mol.natm, mol.natm, mol.natm))
+        ejk4 = np.zeros((mol.natm, mol.natm, mol.natm, mol.natm))
+        #ejk1,ejk2,ejk3,ejk4 = eda_inter.jk_inter(eda, atm2bas_p, 'jk') 
+        atm_ejk = atm_ejk + (ejk1, ejk2, ejk3, ejk4)
+    return atm_ejk
 

@@ -1,35 +1,43 @@
-#INFO: **** input file is /home/wsr/dftpart/test_hfeda/test_c4h10_basis.py ****
+#INFO: **** input file is /home/liwei01/wsr/dftpart/test_hfeda/test_c4h10_basis.py ****
 from dftpart import scfeda
 
 mollist = [
-#'c12h26'
-'c2h6','c4h10','c6h14'
+#'c12h26',
+#'c2h6',
+'c4h10',
+#'c6h14',
+#'c8h18','c12h26',
+#'c10h22'
 ]
 basislist = [
 '6-31g',
-'6-31gss','6-311gss','6-311+gss',
-'cc-pvdz','cc-pvtz',
-'def2-svp','def2-tzvp']
+#'6-31gss',
+#'6-311gss','6-311+gss',
+#"6311g(2df,2pd)"
+#'cc-pvdz','cc-pvtz',
+#'def2-svp','def2-tzvp'
+]
 for mol in mollist:
     for basis in basislist:
         test1 = scfeda.EDA()
         test1.gjf = './'+mol+'.xyz'
-        test1.method = ['m062x',basis]
+        test1.method = ['hf',basis]
         test1.output = mol.upper()+'_'+basis
         #test1.build()
+        test1.anal2=True
         test1.kernel()
         
 
 #INFO: ******************** input file end ********************
 
 
-System: uname_result(system='Linux', node='lw06', release='3.10.0-957.el7.x86_64', version='#1 SMP Thu Nov 8 23:39:32 UTC 2018', machine='x86_64', processor='x86_64')  Threads 48
-Python 3.7.3 (default, Mar 27 2019, 22:11:17) 
-[GCC 7.3.0]
-numpy 1.16.2  scipy 1.2.1
-Date: Fri Jul 12 09:06:27 2019
-PySCF version 1.6.2
-PySCF path  /home/wsr/pyscf
+System: uname_result(system='Linux', node='master', release='3.10.0-693.el7.x86_64', version='#1 SMP Tue Aug 22 21:09:27 UTC 2017', machine='x86_64', processor='x86_64')  Threads 20
+Python 3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19) 
+[GCC 7.2.0]
+numpy 1.14.0  scipy 1.0.0
+Date: Mon Sep  2 22:48:11 2019
+PySCF version 1.5.4
+PySCF path  /home/liwei01/liaokang/anaconda3/lib/python3.6/site-packages/pyscf
 
 [CONFIG] conf_file None
 [INPUT] verbose = 4
@@ -60,11 +68,11 @@ number of NR pGTOs = 128
 number of NR cGTOs = 56
 basis = 6-31g
 ecp = {}
-CPU time:      3322.04
+CPU time:         2.64
 
 
-******** <class 'pyscf.dft.rks.RKS'> ********
-method = RKS-RHF
+******** <class 'pyscf.scf.hf.RHF'> flags ********
+method = RHF
 initial guess = minao
 damping factor = 0
 level shift factor = 0
@@ -76,36 +84,26 @@ SCF gradient tol = None
 max. SCF cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /home/wsr/dftpart/test_hfeda/tmploalabb2
-max_memory 4000 MB (current use 430 MB)
-XC functionals = m062x
-small_rho_cutoff = 1e-07
-radial grids: 
-    Treutler-Ahlrichs (JCP 102, 346 (M4)) radial grids
-    
-becke partition: Becke, JCP, 88, 2547 (1988)
-pruning grids: <function nwchem_prune at 0x2abf6e3f7378>
-grids dens level: 3
-symmetrized grids: False
-atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x2abf6e3f72f0>
+chkfile to save SCF result = /home/liwei01/wsr/dftpart/test_hfeda/tmptodi0y22
+max_memory 4000 MB (current use 77 MB)
 Set gradient conv threshold to 3.16228e-05
-tot grids = 155848
-init E= -158.909677454336
-  HOMO = -0.408223206304717  LUMO = 0.0528460502319778
-cycle= 1 E= -158.24756134805  delta_E= 0.662  |g|= 0.514  |ddm|= 2.94
-  HOMO = -0.267827682575562  LUMO = 0.16757498541147
-cycle= 2 E= -158.273387733178  delta_E= -0.0258  |g|= 0.407  |ddm|= 0.831
-  HOMO = -0.367266372940035  LUMO = 0.135120264770651
-cycle= 3 E= -158.317535276237  delta_E= -0.0441  |g|= 0.0214  |ddm|= 0.399
-  HOMO = -0.363346398409164  LUMO = 0.137926259127376
-cycle= 4 E= -158.317652953893  delta_E= -0.000118  |g|= 0.00789  |ddm|= 0.027
-  HOMO = -0.363849364629764  LUMO = 0.137740394516775
-cycle= 5 E= -158.317668892039  delta_E= -1.59e-05  |g|= 0.000625  |ddm|= 0.00702
-  HOMO = -0.363879789105449  LUMO = 0.137694933950592
-cycle= 6 E= -158.317669014463  delta_E= -1.22e-07  |g|= 2.8e-05  |ddm|= 0.00113
-  HOMO = -0.363878353421115  LUMO = 0.13770222750439
-cycle= 7 E= -158.317669014825  delta_E= -3.62e-10  |g|= 3.94e-06  |ddm|= 8.92e-05
-  HOMO = -0.363876649848032  LUMO = 0.13770307392432
-Extra cycle  E= -158.317669014831  delta_E= -6.42e-12  |g|= 1.31e-06  |ddm|= 1.11e-05
-converged SCF energy = -158.317669014831
-tot grids = 155848
+init E= -158.167979456378
+  HOMO = -0.374772366052812  LUMO = 0.142254233273668
+cycle= 1 E= -157.201074244403  delta_E= 0.967  |g|= 0.296  |ddm|= 2.85
+  HOMO = -0.413059158447682  LUMO = 0.233876952989654
+cycle= 2 E= -157.228826876775  delta_E= -0.0278  |g|= 0.0721  |ddm|= 0.338
+  HOMO = -0.44887768895928  LUMO = 0.22711973691514
+cycle= 3 E= -157.230526528848  delta_E= -0.0017  |g|= 0.0283  |ddm|= 0.109
+  HOMO = -0.438875565542653  LUMO = 0.231108074672155
+cycle= 4 E= -157.230745319019  delta_E= -0.000219  |g|= 0.00198  |ddm|= 0.0286
+  HOMO = -0.439243639311494  LUMO = 0.231133405726437
+cycle= 5 E= -157.230747214406  delta_E= -1.9e-06  |g|= 0.000561  |ddm|= 0.00522
+  HOMO = -0.439226856738172  LUMO = 0.231149242717909
+cycle= 6 E= -157.230747306375  delta_E= -9.2e-08  |g|= 7.21e-05  |ddm|= 0.000787
+  HOMO = -0.439239969001524  LUMO = 0.231143865051119
+cycle= 7 E= -157.23074730918  delta_E= -2.8e-09  |g|= 1.64e-05  |ddm|= 0.000186
+  HOMO = -0.439239836876922  LUMO = 0.231145077377724
+cycle= 8 E= -157.230747309369  delta_E= -1.89e-10  |g|= 2.21e-06  |ddm|= 5.86e-05
+  HOMO = -0.439239867339088  LUMO = 0.231145126479506
+Extra cycle  E= -157.230747309373  delta_E= -3.81e-12  |g|= 8.74e-07  |ddm|= 4.67e-06
+converged SCF energy = -157.230747309373
