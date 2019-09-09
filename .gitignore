@@ -1,2 +1,5 @@
 *.so
 *.chk
+tmp*
+test_hfeda/*
+test/*
