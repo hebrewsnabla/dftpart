@@ -1,11 +1,10 @@
 !subroutine preri(eri,nao,dm,singleatom,singleitem,num1,twoatom,twoitem,num2,threeatom,threeitem,num3,fouratom,fouritem,num4,listA)
 !subroutine preri(eri,nao,dm,singleatom,singleitem,num1,twoatom,twoitem,num2,listA)
 subroutine preri(atm,atml,bas,basl,env,envl,nao,nshls,dm,singleatom,singleitem,num1,&
-atom_energy)
-!,energy_one,energy_two,energy_three,energy_four)
+atom_energy,energyj_one, energyk_one, energyj_two, energyk_two,energy_three,energy_four)
 implicit none 
 !integer findloc
-integer,external :: Ainclude,body,CINTcgto_spheric
+integer,external :: Ainclude,body3,CINTcgto_spheric
 !real*8,external :: cint2e_sph
 integer i,j,k,l,tem,a,b,c,d,flag,di,dj,dk,dl
 integer i0,i1,n,p
@@ -37,10 +36,14 @@ real*8 energy(singleitem+1)
 real*8 schw(:,:)
 ! --------------------------------------------
 !real*8 listA(nao,nao,nao,nao)
-real*8 energy_one(singleitem)                                  
-real*8 energy_two(singleitem,singleitem)
-real*8 energy_three(singleitem,singleitem,singleitem)          
-real*8 energy_four(singleitem,singleitem,singleitem,singleitem)
+real*8 energyj_one(singleitem)                                  
+real*8 energyk_one(singleitem)                                  
+real*8 energyj_two(singleitem,singleitem)
+real*8 energyk_two(singleitem,singleitem)
+!real*8 energy_three(singleitem,singleitem,singleitem)          
+real*8 energy_three          
+!real*8 energy_four(singleitem,singleitem,singleitem,singleitem)
+real*8 energy_four
 ! --------------------------------------------
 integer ncf_sh(:),flcf_sh(:,:),cf2sh(:)
 allocatable buf
@@ -65,20 +68,21 @@ logical ieql,ieqj,keql
 !  f2py -m frame_small5 -c frame_small5.f90 -L/home/liaokang/anaconda3/lib/python3.6/site-packages/pyscf/lib/ -lcint
 !  f2py -m frame_small6 -c frame_small6.f90 -L/home/liaokang/anaconda3/lib/python3.6/site-packages/pyscf/lib/ -lcint --fcompiler=gfortran --f90flags='-fopenmp' -lgomp
 !  f2py -m new_eda -c new_eda.f90  -L/home/liwei01/liaokang/anaconda3/lib/python3.6/site-packages/pyscf/lib/ -lcint --fcompiler=intelem --compiler=intelem -liomp5
+!  f2py -m new_eda -c new_eda.f90  -L/home/liwei01/zcheng/pyscf/pyscf/lib/ -lcint --fcompiler=intelem --compiler=intelem -liomp5
 ! -----------------------------------------------------------------------
 
 !f2py intent(in) :: atm,atml,bas,basl,env,envl,nshls
 !f2py intent(in) :: nao,dm,singleatomi
 !f2py intent(in) :: singleitem,num1
 
-!f2py intent(out) :: atom_energy
-!,energy_one,energy_two,energy_three,energy_four
+!f2py intent(out) :: atom_energy,energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
 !f2py depend(nao) :: dm
 !f2py depend(basl) :: bas
 !f2py depend(envl) :: env
 !f2py depend(atml) :: atm
 
-!f2py depend(singleitem) :: atom_energy,energy_one,energy_two,energy_three,energy_four
+!f2py depend(singleitem) :: atom_energy,energyj_one,energyk_one,energyj_two,energyk_two
+!,energy_three,energy_four
 
 !vjk = 0.0d0
 !listA = 0.0d0
@@ -86,8 +90,10 @@ call system_clock(t1)
 e_coul = 0.0d0
 atom_energy = 0.0d0
 ! --------------------------------------
-energy_one = 0.0d0
-energy_two = 0.0d0
+energyj_one = 0.0d0
+energyk_one = 0.0d0
+energyj_two = 0.0d0
+energyk_two = 0.0d0
 energy_three = 0.0d0
 energy_four = 0.0d0
 ! --------------------------------------
@@ -167,7 +173,7 @@ call system_clock(t1)
 !$omp default(private) &
 !$omp shared(nshls,atm,bas,env,flcf_sh,nbas, &
 !$omp dm,basis,nao,natm,schw,thresh,ncf_sh) &
-!$omp reduction(+:atom_energy,energy_one, energy_two, energy_three, energy_four)
+!$omp reduction(+:atom_energy,energyj_one, energyk_one, energyj_two, energyk_two, energy_three, energy_four)
 do i=1,nshls
   shls(4) = i - 1 
   ifi = flcf_sh(1,i)
@@ -201,8 +207,8 @@ do i=1,nshls
         endif
       enddo
     enddo
-  !  call system_clock(time2) 
-  !  write(*,*) "Calc eri time=",time2-time1
+    !call system_clock(time2) 
+    !write(*,*) "Calc eri time=",time2-time1
     do ibas = ifi,ils
        a = basis(ibas)
        do j =ibas,nao 
@@ -239,38 +245,8 @@ do i=1,nshls
                 e_coul = e_coul_j + e_coul_k
                 if (dabs(e_coul) > 1D-12) then
 
-                 ! II = natm+1
-                 ! JJ = natm+1
-                 ! KK = natm+1
-                 ! LL = natm+1
-                 ! m = 0
-                 ! if (a/=b) then
-                 !     II = a
-                 !     JJ = b
-                 !     m = m+2
-                 ! else
-                 !     II = a
-                 !     m = m+1
-                 ! endif
-               
-                 ! if (c /= II) then
-                 !     if (c /= JJ) then
-                 !         KK = c
-                 !         m = m+1
-                 !     endif
-                 ! endif
-
-                 ! if (d /= II) then
-                 !     if (d /= JJ) then
-                 !         if (d/= KK) then
-                 !             LL = d
-                 !             m = m + 1
-                 !         endif
-                 !     endif
-                 ! endif
-                 !e_coul = e_coul/m
                   
-                  tem = body(a,b,c,d,m,II,JJ,KK,LL)
+                  tem = body3(a,b,c,d,natm,m,II,JJ,KK,LL)
 
                   atom_energy(a) = atom_energy(a) + e_coul/4.0
                   atom_energy(b) = atom_energy(b) + e_coul/4.0
@@ -278,13 +254,19 @@ do i=1,nshls
                   atom_energy(d) = atom_energy(d) + e_coul/4.0 
                   !write(*,*) "1111"  
                   if ( m ==1 ) then
-                      energy_one(II) = energy_one(II) + e_coul 
+                      energyj_one(II) = energyj_one(II) + e_coul_j 
+                      energyk_one(II) = energyk_one(II) + e_coul_k 
                   else if ( m ==2 ) then 
-                      energy_two(II,JJ) = energy_two(II,JJ) + e_coul 
+                      energyj_two(II,JJ) = energyj_two(II,JJ) + e_coul_j 
+                      energyk_two(II,JJ) = energyk_two(II,JJ) + e_coul_k 
+                      energyj_two(JJ,II) = energyj_two(JJ,II) + e_coul_j 
+                      energyk_two(JJ,II) = energyk_two(JJ,II) + e_coul_k 
                   else if ( m ==3 ) then 
-                      energy_three(II,JJ,KK) = energy_three(II,JJ,KK) + e_coul 
+                      !energy_three(II,JJ,KK) = energy_three(II,JJ,KK) + e_coul 
+                      energy_three = energy_three + e_coul 
                   else 
-                      energy_four(II,JJ,KK,LL) = energy_four(II,JJ,KK,LL) + e_coul 
+                      !energy_four(II,JJ,KK,LL) = energy_four(II,JJ,KK,LL) + e_coul 
+                      energy_four = energy_four + e_coul 
                   endif 
 
                 endif
@@ -293,8 +275,8 @@ do i=1,nshls
       enddo
     enddo
   
-  !  call system_clock(time3) 
-  !  write(*,*) "ej-ek time=",time3 - time2
+    !call system_clock(time3) 
+    !write(*,*) "ej-ek time=",time3 - time2
 
   deallocate(aoshell)
   enddo
@@ -303,8 +285,8 @@ enddo
     
 call system_clock(t2)
 write(*,*) "Run-time",t2-t1
-write(*,*) "enrgy_four",energy_four
-write(*,*) "size",size(energy_four)
+!write(*,*) "enrgy_four",energy_four
+!write(*,*) "size",size(energy_four)
 
 return 
 end subroutine preri
@@ -438,4 +420,55 @@ function body2(a,b,c,d,natm,m,II,JJ,KK,LL)
 
 return
 end function body2
+
+function body3(a,b,c,d,natm,m,II,JJ,KK,LL)
+   implicit none
+   integer :: a,b,c,d,natm,m,II,JJ,KK,LL
+   integer :: body3
+   II = natm+1
+   JJ = natm+1
+   KK = natm+1
+   LL = natm+1
+   m = 0
+   if (a/=b) then
+       II = a
+       JJ = b
+       m = m+2
+       if ((c /= II) .and. (c /= JJ)) then
+           KK = c
+           m = m+1
+           if ((d /= II) .and. (d /= JJ) .and. (d/=KK)) then
+               LL = d
+               m = m+1
+           endif
+       else    
+           if ((d /= II) .and. (d /= JJ) ) then
+               KK = d
+               m = m+1
+           endif
+       endif
+   else
+       II = a
+       m = m+1
+       if (c /= II) then
+           JJ = c
+           m = m+1
+           if ((d /= II) .and. (d /= JJ) ) then
+               KK = d
+               m = m+1
+           endif
+       else
+           if (d /= II)  then
+               JJ = d
+               m = m+1
+           endif
+       endif
+   endif
+
+
+    body3 = 0
+    !PRINT *,a,b,c,d,'->', II, JJ ,KK ,LL,m,natm
+
+return
+end function body3
 

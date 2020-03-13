@@ -2,7 +2,11 @@
 # -* - coding: UTF-8 -* -
 #Filename:
 
-def labc_parser(labc):
+def labc_parser(labc, target="lac"):
+    if target=="lab":
+        strg = "Table: Lab for subsystems"
+    else:
+        strg = "Table: Lac for subsystems"
     flag = -1
     number = 0
     sys = []
@@ -11,7 +15,7 @@ def labc_parser(labc):
     with open(labc,'r') as f:
         for line in f:
             line = line.strip()
-            if 'Table: Lab for subsystems' in line:
+            if strg in line:
                 flag = 0
             if flag ==0:
                 number = number + 1

@@ -92,7 +92,8 @@ real*8 hcore(natm,nao,nao)
 real*8 energy_h1e(natm)
 real*8 e1_1(natm)
 real*8 e1_2(natm,natm)
-real*8 e1_3(natm,natm,natm)
+real*8 e1_3
+!real*8 e1_3(natm,natm,natm)
 real*8 tem
 
 call system_clock(time1)
@@ -108,7 +109,7 @@ e1_3=0.0d0
 !$OMP PARALLEL DO schedule(guided) &
 !$omp default(private) &
 !$omp shared(dm,bas2atm,hcore,nao,natm) &
-!$omp reduction(+:energy_h1e,e1_1,e1_2,e1_3)
+!$omp reduction(+:energy_h1e,e1_1,e1_2, e1_3)
 do i=1,nao 
   a = bas2atm(i)+1
   do j=1,nao 
@@ -120,15 +121,17 @@ do i=1,nao
       energy_h1e(b) = energy_h1e(b) + tem*1/4.0d0
       if (a==b) then
         if (a==l) then
-          e1_1(a) = tem
+          e1_1(a) = e1_1(a) + tem
         else
-          e1_2(a,l) = tem
+          e1_2(a,l) = e1_2(a,l) + tem
+          e1_2(l,a) = e1_2(l,a) + tem
         endif
       else 
         if ((a==l) .or. (b==l)) then
-          e1_2(a,b) = tem
+          e1_2(a,b) = e1_2(a,b) + tem
+          e1_2(b,a) = e1_2(b,a) + tem
         else
-          e1_3(a,b,l) = tem
+          e1_3 = e1_3 + tem
         endif
       endif
     enddo

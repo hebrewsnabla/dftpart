@@ -1,0 +1,105 @@
+#INFO: **** input file is /home/liwei01/wsr/dftpart/test_2body/c8b/gfea_c8.py ****
+from dftpart import gfea3
+from pyscf import lib
+
+par = 8
+with lib.with_omp_threads(par):
+    fr0 = gfea3.GFEA()
+    fr0.inputstyle = 'frg'
+    fr0.method = ['hf', '6-31gss','cart','charge']
+    fr0.gjfname = 'c8b'
+    fr0.output = 'c8b'
+    #fr0.showinter = True
+    fr0.kernel()
+
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Linux', node='master', release='3.10.0-693.el7.x86_64', version='#1 SMP Tue Aug 22 21:09:27 UTC 2017', machine='x86_64', processor='x86_64')  Threads 8
+Python 3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19) 
+[GCC 7.2.0]
+numpy 1.14.0  scipy 1.0.0
+Date: Thu Mar 12 22:36:28 2020
+PySCF version 1.6.1
+PySCF path  /home/liwei01/zcheng/pyscf/pyscf
+GIT HEAD      ref: refs/heads/master
+GIT master branch  3adc7fd25839fe674469a52b764c3661e32d7318
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 18
+[INPUT] num. electrons = 58
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = angstrom
+[INPUT] Cartesian GTO integrals (6d 10f)
+[INPUT]  1 C     -7.241242980000   0.108119710000  -0.522802850000 AA  -13.683966033629   0.204316640567  -0.987954203642 Bohr
+[INPUT]  2 H     -7.548001040000   1.132595610000  -0.487467080000 AA  -14.263654753532   2.140295512785  -0.921179275941 Bohr
+[INPUT]  3 H     -7.637948220000  -0.352815550000  -1.403179830000 AA  -14.433630289409  -0.666724761988  -2.651625582214 Bohr
+[INPUT]  4 O     -7.729148760000  -0.575736380000   0.634430400000 AA  -14.605974332422  -1.087984078149   1.198899701098 Bohr
+[INPUT]  5 H     -8.687838560000  -0.529222040000   0.653146440000 AA  -16.417635492836  -1.000084714684   1.234267890835 Bohr
+[INPUT]  6 C     -5.703344760000   0.033502950000  -0.552826490000 AA  -10.777759590373   0.063311399865  -1.044690660505 Bohr
+[INPUT]  7 H     -5.306639520000   0.494438220000   0.327550490000 AA  -10.028095334593   0.934352821317   0.618980718067 Bohr
+[INPUT]  8 C     -5.177907760000   0.769963360000  -1.799077680000 AA   -9.784827564660   1.455019876350  -3.399764092018 Bohr
+[INPUT]  9 H     -5.484665830000   1.794439260000  -1.763741910000 AA  -10.364516303460   3.390998748567  -3.332989164317 Bohr
+[INPUT] 10 H     -5.574613010000   0.309028090000  -2.679454660000 AA  -10.534491839337   0.583978454897  -5.063435470590 Bohr
+[INPUT] 11 F     -5.316313560000  -1.259060100000  -0.597409000000 AA  -10.046376620711  -2.379278763367  -1.128939394350 Bohr
+[INPUT] 12 C     -3.114572550000   1.431807010000  -3.075352510000 AA   -5.885689114588   2.705723112132  -5.811573980394 Bohr
+[INPUT] 13 H     -3.421330610000   2.456282910000  -3.040016740000 AA   -6.465377834491   4.641701984350  -5.744799052693 Bohr
+[INPUT] 14 C     -3.640009550000   0.695346600000  -1.829101320000 AA   -6.878621140301   1.314014635647  -3.456500548880 Bohr
+[INPUT] 15 H     -3.333251480000  -0.329129310000  -1.864437080000 AA   -6.298932401501  -0.621964255467  -3.523275457684 Bohr
+[INPUT] 16 H     -3.243304300000   1.156281860000  -0.948724340000 AA   -6.128956865624   2.185056038203  -1.792829170309 Bohr
+[INPUT] 17 H     -3.511277790000   0.970871740000  -3.955729490000 AA   -6.635353370368   1.834681690680  -7.475245358965 Bohr
+[INPUT] 18 H     -2.046032880000   1.379962890000  -3.096213090000 AA   -3.866441785055   2.607751924163  -5.850994763393 Bohr
+
+nuclear repulsion = 326.446241199013
+number of shells = 75
+number of NR pGTOs = 273
+number of NR cGTOs = 160
+basis = 6-31gss
+ecp = {}
+CPU time:         0.69
+
+
+******** <class 'pyscf.qmmm.itrf.mm_charge.<locals>.QMMM'> ********
+method = QMMM-RHF
+initial guess = minao
+damping factor = 0
+level shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+DIIS start cycle = 1
+DIIS space = 8
+SCF tol = 1e-09
+SCF gradient tol = None
+max. SCF cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /home/liwei01/wsr/dftpart/test_2body/c8b/tmp9h7z8p0j
+max_memory 4000 MB (current use 65 MB)
+** Add background charges for <class 'pyscf.scf.hf.RHF'> **
+Set gradient conv threshold to 3.16228e-05
+init E= -371.696666835736
+  HOMO = -0.33504790926649  LUMO = 0.113553932345093
+cycle= 1 E= -370.002230836043  delta_E= 1.69  |g|= 0.698  |ddm|= 3.44
+  HOMO = -0.386133761440016  LUMO = 0.215235608135643
+cycle= 2 E= -370.09389475443  delta_E= -0.0917  |g|= 0.36  |ddm|= 0.682
+  HOMO = -0.415063239856735  LUMO = 0.221392944881694
+cycle= 3 E= -370.115860309122  delta_E= -0.022  |g|= 0.0969  |ddm|= 0.315
+  HOMO = -0.420616547453839  LUMO = 0.227280631880855
+cycle= 4 E= -370.117880092146  delta_E= -0.00202  |g|= 0.0108  |ddm|= 0.0767
+  HOMO = -0.419420216259674  LUMO = 0.226251010902321
+cycle= 5 E= -370.117918404386  delta_E= -3.83e-05  |g|= 0.00317  |ddm|= 0.0171
+  HOMO = -0.420354138418123  LUMO = 0.22620048439785
+cycle= 6 E= -370.117922009237  delta_E= -3.6e-06  |g|= 0.000981  |ddm|= 0.00456
+  HOMO = -0.420296698450707  LUMO = 0.226224848078416
+cycle= 7 E= -370.117922462949  delta_E= -4.54e-07  |g|= 0.000259  |ddm|= 0.00189
+  HOMO = -0.420298268730757  LUMO = 0.2262262801173
+cycle= 8 E= -370.117922500445  delta_E= -3.75e-08  |g|= 5.71e-05  |ddm|= 0.000552
+  HOMO = -0.420303328993479  LUMO = 0.22622236755913
+cycle= 9 E= -370.117922501761  delta_E= -1.32e-09  |g|= 1.41e-05  |ddm|= 8.89e-05
+  HOMO = -0.420301081507151  LUMO = 0.226223091466284
+cycle= 10 E= -370.117922501854  delta_E= -9.27e-11  |g|= 4.08e-06  |ddm|= 2.51e-05
+  HOMO = -0.420300513663235  LUMO = 0.226222839712702
+Extra cycle  E= -370.117922501862  delta_E= -8.3e-12  |g|= 1.77e-06  |ddm|= 7.35e-06
+converged SCF energy = -370.117922501862

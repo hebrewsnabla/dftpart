@@ -4,14 +4,14 @@ import numpy as np
 from QCKit import logger
                      
 subeda = scfeda.EDA()
-subeda.method = ["hf", "6-31gs"]
+subeda.method = ["hf", "6-311gss"]
 subeda.gjf = '32ane_subsys/32ane_6.gjf'
 subeda.output =  subeda.gjf[:-4]
 subatm_E, subE, conv = subeda.kernel()
 atom_E = np.zeros(98)
-resultlog = '32ane-result.log'
+resultlog = '32ane-result_6.log'
 with open(resultlog,'a') as g:
-    logger.slog(g, "center atom energies:")
+    logger.slog(g, "## center atom energies in subsystem 6:")
     cen_intot = [25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98]
     cen_insub = [5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38]
     for i in range(len(cen_intot)):                        
@@ -20,11 +20,11 @@ with open(resultlog,'a') as g:
 #INFO: ******************** input file end ********************
 
 
-System: uname_result(system='Linux', node='node02', release='3.10.0-693.el7.x86_64', version='#1 SMP Tue Aug 22 21:09:27 UTC 2017', machine='x86_64', processor='x86_64')  Threads 24
+System: uname_result(system='Linux', node='node11', release='3.10.0-693.el7.x86_64', version='#1 SMP Tue Aug 22 21:09:27 UTC 2017', machine='x86_64', processor='x86_64')  Threads 24
 Python 3.6.4 |Anaconda, Inc.| (default, Jan 16 2018, 18:10:19) 
 [GCC 7.2.0]
 numpy 1.14.0  scipy 1.0.0
-Date: Mon Sep  9 23:16:05 2019
+Date: Wed Sep 11 20:03:13 2019
 PySCF version 1.5.4
 PySCF path  /home/liwei01/liaokang/anaconda3/lib/python3.6/site-packages/pyscf
 
@@ -76,12 +76,12 @@ PySCF path  /home/liwei01/liaokang/anaconda3/lib/python3.6/site-packages/pyscf
 [INPUT] 38 H    -19.852481000000  -1.019397000000  -0.875965000000 AA  -37.515751983132  -1.926381142203  -1.655333944705 Bohr
 
 nuclear repulsion = 672.404196845685
-number of shells = 124
-number of NR pGTOs = 428
-number of NR cGTOs = 220
-basis = 6-31gs
+number of shells = 200
+number of NR pGTOs = 580
+number of NR cGTOs = 372
+basis = 6-311gss
 ecp = {}
-CPU time:         2.78
+CPU time:         2.94
 
 
 ******** <class 'pyscf.scf.hf.RHF'> flags ********
@@ -97,28 +97,28 @@ SCF gradient tol = None
 max. SCF cycles = 50
 direct_scf = True
 direct_scf_tol = 1e-13
-chkfile to save SCF result = /home/liwei01/wsr/dftpart/mp_example/32ane/tmpk_ftm29p
-max_memory 4000 MB (current use 58 MB)
+chkfile to save SCF result = /home/liwei01/wsr/dftpart/mp_example/32ane/tmp3syytk1t
+max_memory 4000 MB (current use 86 MB)
 Set gradient conv threshold to 3.16228e-05
-init E= -472.846902967108
-  HOMO = -0.344022677313084  LUMO = 0.136460137311942
-cycle= 1 E= -469.456815750361  delta_E= 3.39  |g|= 0.567  |ddm|= 4.87
-  HOMO = -0.378202106514708  LUMO = 0.22972865872277
-cycle= 2 E= -469.564756782613  delta_E= -0.108  |g|= 0.148  |ddm|=  0.6
-  HOMO = -0.425609013099058  LUMO = 0.222829366182704
-cycle= 3 E= -469.572310529131  delta_E= -0.00755  |g|= 0.0522  |ddm|= 0.215
-  HOMO = -0.413408021176755  LUMO = 0.226920191584298
-cycle= 4 E= -469.573092415914  delta_E= -0.000782  |g|= 0.00524  |ddm|= 0.0544
-  HOMO = -0.414791117656168  LUMO = 0.226636458559736
-cycle= 5 E= -469.57310377486  delta_E= -1.14e-05  |g|= 0.00131  |ddm|= 0.00964
-  HOMO = -0.415012224175769  LUMO = 0.226584894568943
-cycle= 6 E= -469.573104315193  delta_E= -5.4e-07  |g|= 0.0003  |ddm|= 0.00162
-  HOMO = -0.414990858515187  LUMO = 0.226594613273271
-cycle= 7 E= -469.573104349819  delta_E= -3.46e-08  |g|= 5.67e-05  |ddm|= 0.000442
-  HOMO = -0.415001885148625  LUMO = 0.2265920949958
-cycle= 8 E= -469.573104351414  delta_E= -1.59e-09  |g|= 9.42e-06  |ddm|= 0.000134
-  HOMO = -0.415002036149331  LUMO = 0.226592158254069
-cycle= 9 E= -469.573104351444  delta_E= -3.02e-11  |g|= 2.93e-06  |ddm|= 1.37e-05
-  HOMO = -0.415002121921902  LUMO = 0.226592197804278
-Extra cycle  E= -469.573104351447  delta_E= -3.41e-12  |g|= 1.24e-06  |ddm|= 5.03e-06
-converged SCF energy = -469.573104351447
+init E= -472.866439937281
+  HOMO = -0.343216908041969  LUMO = 0.0936096919626131
+cycle= 1 E= -469.571674236269  delta_E= 3.29  |g|= 0.584  |ddm|= 4.37
+  HOMO = -0.382034939517396  LUMO = 0.159225309530421
+cycle= 2 E= -469.681223928601  delta_E= -0.11  |g|= 0.153  |ddm|= 0.601
+  HOMO = -0.427524311356485  LUMO = 0.154588750849152
+cycle= 3 E= -469.689823161264  delta_E= -0.0086  |g|= 0.0572  |ddm|= 0.208
+  HOMO = -0.415325747888993  LUMO = 0.158023204509317
+cycle= 4 E= -469.690794290545  delta_E= -0.000971  |g|= 0.00624  |ddm|= 0.0534
+  HOMO = -0.416402133905609  LUMO = 0.157958038699879
+cycle= 5 E= -469.690813383567  delta_E= -1.91e-05  |g|= 0.0017  |ddm|= 0.0117
+  HOMO = -0.416638408094474  LUMO = 0.157935016088396
+cycle= 6 E= -469.690814320083  delta_E= -9.37e-07  |g|= 0.00042  |ddm|= 0.00193
+  HOMO = -0.416634656987961  LUMO = 0.157936061859512
+cycle= 7 E= -469.690814403371  delta_E= -8.33e-08  |g|= 7.22e-05  |ddm|= 0.000797
+  HOMO = -0.416644719946482  LUMO = 0.157934270147711
+cycle= 8 E= -469.690814406092  delta_E= -2.72e-09  |g|= 1.5e-05  |ddm|= 0.000179
+  HOMO = -0.416644426007889  LUMO = 0.157934258391476
+cycle= 9 E= -469.690814406164  delta_E= -7.23e-11  |g|= 4.24e-06  |ddm|= 1.99e-05
+  HOMO = -0.416644728622597  LUMO = 0.157934239994324
+Extra cycle  E= -469.690814406174  delta_E= -9.55e-12  |g|= 1.75e-06  |ddm|= 6.99e-06
+converged SCF energy = -469.690814406174

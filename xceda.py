@@ -55,7 +55,14 @@ def get_atmexc(eda,atm2bas):
     omega, alpha, hyb = ni.rsh_and_hybrid_coeff(ks.xc, mol.spin)
     if ks.omega is not None: omega = ks.omega
     if abs(hyb) > 1e-10:
-        atom_ej, atom_ek = scfeda.get_Ejk(eda,atm2bas,'jk')
+        if eda.showinter:
+            atom_ej, atom_ek, ej1, ej2, ej3, ej4, ek1, ek2, ek3, ek4 = scfeda.get_Ejk(eda,atm2bas,'jk')
+            ejxc1 = ej1 + hyb*ek1 + atom_exc
+            ejxc2 = ej2 + hyb*ek2
+            ejxc3 = ej3 + hyb*ek3
+            ejxc4 = ej4 + hyb*ek4
+        else:
+            atom_ej, atom_ek = scfeda.get_Ejk(eda,atm2bas,'jk')
         atom_exc += hyb * atom_ek
         #if abs(omega) > 1e-10:
         #    eklr = get_eklr(mol, dm, omega, hermi=1)*(alpha-hyb)
@@ -70,7 +77,10 @@ def get_atmexc(eda,atm2bas):
         t3 = time.time()
         #with open(eda.output+'-eda.log','a') as f:
         logger.slog(eda.stdout, "time for Ej: %.5f\n", (t3-t2))
-    return atom_exc, atom_ej
+    if eda.showinter:
+        return atom_exc, atom_ej, ejxc1, ejxc2
+    else:
+        return atom_exc, atom_ej
 """
 def get_eklr(mol, dm, omega, hermi):
     nao = dm.shape[-1]

@@ -17,7 +17,8 @@ import numpy as np
 import sys, os
 import time
 import subprocess
-from QCKit import logger, gjf_kit
+
+from kit import logger, gjf_kit
 from dftpart import scfeda
 import labc
 
@@ -34,11 +35,10 @@ class GFEA():
         self.E_GFEA = 0
         self.atom_E = None
 
-        ## atomlist style ##
-        self.subsys = None
         self.gjfname = None
         self.gjf = None
-        #self.gjf_list = None
+        ## atomlist style ##
+        self.subsys = None
         self.atomlist_tot = None
         self.spinlist_tot = None
         self.chglist_tot = None
@@ -50,13 +50,13 @@ class GFEA():
         self.frg = None
         self.lso = None
         self.axyz = None
-        self.gjfname = None
         ###############
 
         self.totmol = None
         self.method = None
         self.dm0 = 'pyscf'
         self.built = False
+        self.showinter = False
         #self.Gau_version = 'G16'
         #self.fchklist = None
     def build(self):
@@ -66,20 +66,20 @@ class GFEA():
             inp = self.subsys, self.atomlist_tot, self.spinlist_tot, self.chglist_tot, self.gjfname
         elif self.inputstyle == 'frg':
             if self.frg is None:
-                self.frg = self.gjfname + '.frg'
+                self.frg = self.gjfname + '/' + self.gjfname + '.frg'
             if self.lso is None:
-                self.lso = self.gjfname + '.lso'
+                self.lso = self.gjfname + '/' + self.gjfname + '.lso'
             if self.axyz is None:
-                self.axyz = self.gjfname + '.axyz'
-            self.cha = self.gjfname + '.cha'
+                self.axyz = self.gjfname + '/' + self.gjfname + '.axyz'
+            self.cha = self.gjfname + '/' + self.gjfname + '.cha'
             self.gjf = self.gjfname + '.gjf'
-            self.labc = self.gjfname + '.labc'
+            self.labc = self.gjfname + '/' + self.gjfname + '.labc'
         else:
             logger.slog(f,"Invalid Input Style!")
         #E_GFEA, atom_E =  kernel(self)
         #f.close()
         totmol = gto.Mole()
-        totmol.atom = gjf_kit.gjf_parser(self.gjf)[0]
+        totmol.atom, coo, cha, totmol.charge, totmol.spin = gjf_kit.gjf_parser(self.gjf)
         totmol.build()
         self.totmol = totmol
         self.atom_E = np.zeros(totmol.natm)
@@ -92,8 +92,9 @@ class GFEA():
         elif self.inputstyle == 'frg':
             #frg, lso, axyz, gjfname = self.frg, self.lso, self.axyz, self.gjfname
             #num_subsys = get_num_subsys(lso)
-            self.subsys_lso, self.num_subsys = lso_parser(self.lso)
+            self.subsys_lso, self.num_subsys, self.frg_intot = lso_parser(self.lso)
             self.gjflist, fchklist, gmslist = get_subgjf(self.gjfname, self.num_subsys)
+            logger.mlog(self.stdout, "atoms in frg (tot order)\n", self.frg_intot)
             logger.mlog(self.stdout, "subsys", self.subsys_lso)
             logger.slog(self.stdout, "number of subsystems: %d", self.num_subsys)
         if self.dm0 == 'Gaussian':
@@ -139,13 +140,15 @@ class GFEA():
                                            atomlist, spinlist, chglist, backlabel,
                                            backlist, method, coords, charges,
                                            'subsys', verbose)
+
         elif self.inputstyle == 'frg':
             #atomlist_tot_frg, spinlist_tot_frg, chglist_tot_frg = frg_parser(
             #    self.frg)
             #logger.mlog(self.stdout, "atomlist_tot", atomlist_tot_frg)
             #num_frag = len(atomlist_tot_frg)
             #logger.mlog(self.stdout, "num_frag", num_frag)
-            lab = labc.labc_parser(self.labc)
+            lab = labc.labc_parser(self.labc, "lab")
+            lac = labc.labc_parser(self.labc, "lac")
             if ('charge' in self.method) or ('qmmm' in self.method):
                 self.chglist = cha_parser(self.cha)
             for i in range(self.num_subsys):
@@ -159,26 +162,21 @@ class GFEA():
                 logger.mlog(self.stdout, "subsys_i", subsys_i)
                 logger.mlog(self.stdout, "_cen", _cen)
                 logger.mlog(self.stdout, "_env", _env)
+                #frag_list = get_frags(self.frg_intot, _cen, _env)
                 #for label in subsys_i:
-                atomlist_lab = lab[i]
-                cen_intot = []
-                cen_insub = []
-                molchgs = np.zeros(len(atomlist_lab))
-                for label in atomlist_lab:
-                    if label != 0:
-                        cen_intot.append(label)
-                        cen_insub.append(atomlist_lab.index(label)+1)
-                        if 'charge' in self.method:
-                            molchgs[atomlist_lab.index(label)] = self.chglist[label-1]
-                    else:
-                        if 'charge' in self.method:
-                            molchgs[atomlist_lab.index(label)] = 0.0
-
-                logger.mlog(self.stdout, "atomlist_lab", atomlist_lab)
+                cen_intot, cen_insub, frag_list, molchgs = get_frags(self, lab[i], lac[i], _cen, _env)
+                logger.mlog(self.stdout, "atomlist_lab", lab[i])
                 logger.mlog(self.stdout, "cen_intot", cen_intot)
                 logger.mlog(self.stdout, "cen_insub", cen_insub)
                 if 'charge' in self.method:
                     logger.log(self.stdout, "molchgs", molchgs)
+                logger.slog(self.stdout, "-----------------------------------")
+                logger.slog(self.stdout, "frag  layer        atm_intot               atm_insub")
+                for f in frag_list:
+                    logger.slog(self.stdout, "%d      %s     "%(f.label, f.layer), endl=False)
+                    logger.mlog(self.stdout, "", f.atm_intot, endl=False)
+                    logger.mlog(self.stdout, "         ", f.atm_insub)
+                logger.slog(self.stdout, "-----------------------------------")
 
                 subeda = scfeda.EDA()
                 subeda.method = self.method
@@ -186,7 +184,8 @@ class GFEA():
                 if 'charge' in self.method:
                     subeda.molchgs = molchgs
                 subeda.output = subeda.gjf[:-4]
-                subatm_E, subE, conv = subeda.kernel()
+                subeda.showinter = self.showinter
+                subatm_E, subE, conv, intert = subeda.kernel()
                 logger.log(self.stdout, "subatm_E", subatm_E)
                 if conv==False:
                     logger.slog(self.stdout, "Error: EDA not converged")
@@ -195,11 +194,55 @@ class GFEA():
                     self.atom_E[cen_intot[i]-1] = subatm_E[cen_insub[i]-1]
                     logger.slog(self.stdout, "%d %.10f", cen_intot[i], self.atom_E[cen_intot[i]-1])
                 logger.slog(self.stdout, "## END ###########################")
+                
         self.E_GFEA = self.atom_E.sum()
         logger.log(self.stdout, "atom_E", self.atom_E)
         logger.slog(self.stdout, "E_GFEA = %.10f", self.E_GFEA)
+        #if self.showinter:
+            
 
         return self.E_GFEA, self.atom_E
+
+class Frag():
+    def __init__(self):
+        self.label = None
+        self.atm_intot = []
+        self.atm_insub = []
+        self.layer = None
+
+
+def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
+    #atomlist_lab = lab[i]
+    #atomlist_lac = lac[i]
+    cen_intot = []
+    cen_insub = []
+    env_intot = []
+    env_insub = []
+    frags_list = []
+    for cenfrg in _cen:
+        f = Frag()
+        f.atm_intot = gfea.frg_intot[cenfrg-1]
+        f.label = cenfrg
+        f.layer = 'c'
+        frags_list.append(f)
+    for envfrg in _env:
+        f = Frag()
+        f.atm_intot = gfea.frg_intot[envfrg-1]
+        f.label = envfrg
+        f.layer = 'e'
+        frags_list.append(f)
+
+    molchgs = np.zeros(len(atomlist_lab))
+    for label in atomlist_lab:
+        if label != 0:
+            cen_intot.append(label)
+            cen_insub.append(atomlist_lab.index(label)+1)
+            if 'charge' in gfea.method:
+                molchgs[atomlist_lab.index(label)] = gfea.chglist[label-1]
+        else:
+            if 'charge' in gfea.method:
+                molchgs[atomlist_lab.index(label)] = 0.0
+    return cen_intot, cen_insub, frags_list, molchgs
 
 def one2zero(alist):
     if isinstance(alist, list):
@@ -286,6 +329,10 @@ def fchk2dm(gjflist,
             submf = dft.RKS(submol)
             submf.xc = method[0]
             submf.grids.atom_grid = (99, 590)
+            submf.xc = method[0]
+            submf.grids.atom_grid = (99, 590)
+            submf.xc = method[0]
+            submf.grids.atom_grid = (99, 590)
         submf = scf.addons.remove_linear_dep_(submf, threshold=1e-6, lindep=1e-7)
         #if 'charge' in method:
         #    #h1e_hf = submf.get_hcore()
@@ -353,6 +400,7 @@ def lso_parser(lso, style='by_sub'):
     with open(lso, 'r') as f:
         lines = f.readlines()
     subsys_table = []
+    frg_table = []
     read = False
     for line in lines:
         if '#final capped fragments' in line:
@@ -362,6 +410,16 @@ def lso_parser(lso, style='by_sub'):
             subsys_table.append(line)
         if 'Num of capped fragments:' in line:
             break
+    read = False
+    for line in lines:
+        if '#fragment atoms' in line:
+            read = True
+            continue
+        if read is True:
+            frg_table.append(line)
+            if '#end' in line:
+                break
+            
     subsys_data = subsys_table[3:-2]
     subsys_lso = []
     for line in subsys_data:
@@ -369,29 +427,8 @@ def lso_parser(lso, style='by_sub'):
         line = line.split()
         cen = line[0].strip()
         env = line[1].strip()
-        cen = cen.split(',')
-        cen_list = []
-        for item in cen:
-            if '-' in item:
-                item = item.split('-')
-                item_head = int(item[0])
-                item_tail = int(item[1])
-                item_list = list(range(item_head, item_tail + 1))
-            else:
-                item_list = [int(item)]
-            cen_list += item_list
-
-        env = env.split(',')
-        env_list = []
-        for item in env:
-            if '-' in item:
-                item = item.split('-')
-                item_head = int(item[0])
-                item_tail = int(item[1])
-                item_list = list(range(item_head, item_tail + 1))
-            else:
-                item_list = [int(item)]
-            env_list += item_list
+        cen_list = comma_parser(cen)
+        env_list = comma_parser(env)
 
         if style == 'by_sub':
             subsys_lso.append([cen_list, env_list])
@@ -402,10 +439,44 @@ def lso_parser(lso, style='by_sub'):
                 real_env = env_list + cen_rest
                 real_env.sort()
                 subsys_lso.append([[i], real_env])
+
+    #frg_data = frg_table[3:-2]
+    #print(frg_table)
+    frg_intot = []
+    for line in frg_table[3:-2]:
+        line = line.strip().split()
+        frg_i = line[5]
+        if len(line)==7: frg_i = [line[5],line[6]]
+        #print(frg_i)
+        frg_i = comma_parser(frg_i)
+        frg_intot.append(frg_i)
+
     line = subprocess.getstatusoutput("grep 'Num of capped fragments' " + lso)
     #logger.log(f,line[1].split())
     num_subsys = int(line[1].split()[-1].strip())
-    return subsys_lso, num_subsys
+
+    return subsys_lso, num_subsys, frg_intot
+
+def comma_parser(exprs):
+    if isinstance(exprs, list):
+        out = []
+        for item in exprs:
+            out += comma_parser(item)
+        return out
+    else:
+        exprs = exprs.strip('(').strip(')')
+        exprs = exprs.split(',')
+        expr_list = []
+        for item in exprs:
+            if '-' in item:
+                item = item.split('-')
+                item_head = int(item[0])
+                item_tail = int(item[1])
+                item_list = list(range(item_head, item_tail + 1))
+            else:
+                item_list = [int(item)]
+            expr_list += item_list
+    return expr_list
 
 
 def axyz_parser(axyz, subsyslabel, _atomlist):
@@ -894,10 +965,6 @@ def NN_input(inputstyle,
     for item in subsys:
         E = 0.0
         for jtem in EDA_RR_data:
-            jlabel = label_parser(jtem[1])
-            if item in jlabel:
-                if len(jlabel) == 1:
-                    E += jtem[0]
                 if len(jlabel) == 2:
                     E += jtem[0] * 0.5
                 if len(jlabel) == 3:

@@ -62,6 +62,7 @@ class GFEA():
         #self.Gau_version = 'G16'
         #self.fchklist = None
         # parallel
+        self.nodes = None
         self.rack = None
     def build(self):
         os.system("echo '' > "+self.output+'-gfea.log')
@@ -83,7 +84,7 @@ class GFEA():
         #E_GFEA, atom_E =  kernel(self)
         #f.close()
         totmol = gto.Mole()
-        totmol.atom = gjf_kit.gjf_parser(self.gjf)[0]
+        totmol.atom, c1,c2, totmol.charge, totmol.spin = gjf_kit.gjf_parser(self.gjf)
         totmol.build()
         self.totmol = totmol
         self.atom_E = np.zeros(totmol.natm)
@@ -153,8 +154,9 @@ class GFEA():
             if ('charge' in self.method) or ('qmmm' in self.method):
                 self.chglist = cha_parser(self.cha)
             os.system("echo "" > " + self.output + "-result.log")
+            if self.nodes is None: self.nodes = self.num_subsys
             for i in range(self.num_subsys):
-                logger.slog(self.stdout, "## Do EDA on subsys %d ############", i+1)
+                #logger.slog(self.stdout, "## Do EDA on subsys %d ############", i+1)
 
                 #atomlist = []
                 _cen = self.subsys_lso[i][0]
@@ -196,19 +198,36 @@ class GFEA():
                 f.write("subeda.output =  subeda.gjf[:-4]\n")
                 f.write("subatm_E, subE, conv = subeda.kernel()\n")
                 f.write("atom_E = np.zeros(%d)\n" % self.totmol.natm)
-                f.write("resultlog = '%s" % self.output + "-result.log\'\n")
-                f.write("with open(resultlog,'a') as g:\n")
+                f.write("resultlog = '%s" % self.output + "-result_%d.log\'\n" % (i+1))
+                f.write("with open(resultlog,'w') as g:\n")
                 #f.write("    logger.log(g, \"subatm_E\", subatm_E)\n")
-                f.write("    logger.slog(g, \"center atom energies:\")\n")
+                f.write("    logger.slog(g, \"## center atom energies in subsystem %d:\")\n" % (i+1))
                 f.write("    cen_intot = " + json.dumps(cen_intot) + '\n')
                 f.write("    cen_insub = " + json.dumps(cen_insub) + '\n')
                 f.write("    for i in range(len(cen_intot)): \
                        \n        atom_E[cen_intot[i]-1] = subatm_E[cen_insub[i]-1] \
                        \n        logger.slog(g, \"%d %.10f\", cen_intot[i], atom_E[cen_intot[i]-1])\n")
                 f.close()
-                os.system("bsub -n 24 -q %s python %s.py" % (self.rack, self.gjflist[i][:-4]))
-        #        with open(subeda.gjf[:-4] + '-result.log') as g:
-        #            g.write
+                while True:
+                    if int(time.time())%2==0:
+                        fi, fi_num = finished(self.output, self.num_subsys)
+                        running = i - fi_num
+                        if running < self.nodes:
+                            os.system("bsub -n 24 -q %s python %s.py" % (self.rack, self.gjflist[i][:-4]))
+                            break
+            os.system("echo "" > %s" % self.output + "-result_all.log")
+            while True:
+                if int(time.time())%2==0:
+                    fi, fi_num = finished(self.output, self.num_subsys)
+                    if fi:
+                        for i in range(self.num_subsys):
+                            os.system("cat %s" % self.output + "-result_%d.log" % (i+1) + " >> %s" % self.output + "-result_all.log") 
+                        break
+            with open(self.output + '-result_all.log') as g:
+                data = g.readlines()
+            for line in data:
+                line = line.strip().split()
+                if len(line)==2: self.atom_E[int(line[0])-1] = float(line[1])
         #        logger.log(self.stdout, "subatm_E", subatm_E)
         #        if conv==False:
         #            logger.slog(self.stdout, "Error: EDA not converged")
@@ -217,12 +236,23 @@ class GFEA():
         #            self.atom_E[cen_intot[i]-1] = subatm_E[cen_insub[i]-1]
         #            logger.slog(self.stdout, "%d %.10f", cen_intot[i], self.atom_E[cen_intot[i]-1])
         #        logger.slog(self.stdout, "## END ###########################")
-        #self.E_GFEA = self.atom_E.sum()
-        #logger.log(self.stdout, "atom_E", self.atom_E)
-        #logger.slog(self.stdout, "E_GFEA = %.10f", self.E_GFEA)
-        #
-        #return self.E_GFEA, self.atom_E
+        self.E_GFEA = self.atom_E.sum()
+        logger.log(self.stdout, "atom_E", self.atom_E)
+        logger.slog(self.stdout, "E_GFEA = %.10f", self.E_GFEA)
+        
+        return self.E_GFEA, self.atom_E
 
+def finished(output, num):
+    #fi = 1
+    fi_num = 0
+    for i in range(num):
+        result =  output+"-result_%d.log" % (i+1)
+        if result in os.listdir('.'):
+            #fi *= 1
+            fi_num += 1
+    fi = (fi_num==num)
+    return fi, fi_num
+            
 def one2zero(alist):
     if isinstance(alist, list):
         blist = []

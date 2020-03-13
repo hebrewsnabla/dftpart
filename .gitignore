@@ -1,5 +1,6 @@
 *.so
 *.chk
 tmp*
-test_hfeda/*
-test/*
+mp_example/
+test_2body/ala18_hf/
+test_2body/ala18_hf_2.3/

@@ -1,7 +1,18 @@
-from gfea3 import p2f
+#from scfeda import p2f
 from new_eda import preri
 from QCKit import logger
-import pymp
+#import pymp
+import numpy as np
+
+def p2f(atm2bas_p):
+    atm2bas_f = []
+    for item in atm2bas_p:
+        item_f = []
+        for j in item:
+            item_f.append(j+1)
+        atm2bas_f.append(item_f)
+    return atm2bas_f
+
 
 def jk_inter(eda, atm2bas_p, jk='jk'):
     atm2bas_f = p2f(atm2bas_p)
@@ -15,14 +26,15 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
             atm2bas_f[i] = atm2bas_f[i] + [0]*(num1-len(atm2bas_f[i]))
     singleitem = len(atm2bas_f)
 
-    atm_ = mol._atm.T
-    atml = np.shape(mol._atm)[0]
-    bas_ = mol._bas.T
-    basl = np.shape(mol._bas)[0]
-    env_ = mol._env
-    envl = np.shape(mol._env)[0]
+    atm_ = eda.mol._atm.T
+    atml = np.shape(eda.mol._atm)[0]
+    bas_ = eda.mol._bas.T
+    basl = np.shape(eda.mol._bas)[0]
+    env_ = eda.mol._env
+    envl = np.shape(eda.mol._env)[0]
+    dm = eda.dm
     nao = len(dm)
-    nbas = mol._bas.shape[0]
+    nbas = eda.mol._bas.shape[0]
     #if eda.verbose > 5:
     #logger.mlog(eda.stdout,"atm_",atm_)
     #logger.mlog(eda.stdout,"bas_",bas_)
@@ -30,25 +42,33 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     logger.slog(eda.stdout,"nao=%d",nao)
     logger.slog(eda.stdout,"nbas=%d",nbas)
 
-    atom_ejk, ejk1,ejk2, ejk3, ejk4 = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
+    atom_ejk, ej1,ek1, ej2, ek2, ejk3, ejk4 = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
     #atom_ejk = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
     #atom_energy = np.array(atom_energy)
     #print(atom_ejk)
-    atom_ejk = np.array(atom_ejk)[0:mol.natm]
-    #logger.log(eda.stdout,"Atom_ejk=",atom_ejk)
-    ejk1 = np.array(ejk1)
-    ejk2 = np.array(ejk2)
-    ejk3 = np.array(ejk3)
-    ejk4 = np.array(ejk4)
+    atom_ejk = np.array(atom_ejk)[0:eda.mol.natm]
+    logger.log(eda.stdout_inter,"Atom_ejk=",atom_ejk)
+    ej1 = np.array(ej1)
+    ej2 = np.array(ej2)
+    ek1 = np.array(ek1)
+    ek2 = np.array(ek2)
+    #ejk3 = np.array(ejk3)
+    #ejk4 = np.array(ejk4)
+    ejk1 = ej1+ek1
+    ejk2 = np.triu(ej2+ek2)
     logger.log(eda.stdout_inter,"ejk1=",ejk1)
     logger.log(eda.stdout_inter,"ejk2=",ejk2)
-    logger.log(eda.stdout_inter,"ejk3=",ejk3)
-    logger.log(eda.stdout_inter,"ejk4=",ejk4)
+    logger.mlog(eda.stdout_inter,"ejk3=",ejk3)
+    logger.mlog(eda.stdout_inter,"ejk4=",ejk4)
+    interejksum = ejk1.sum() + ejk2.sum() + ejk3 + ejk4
+    ejksum = atom_ejk.sum()
+    logger.mlog(eda.stdout_inter,"interejksum=",interejksum)
+    logger.mlog(eda.stdout_inter,"ejksum=",ejksum)
     #if eda.anal:
     #    tot_aej = atom_ej.sum()
     #    ej_err = tot_aej - np.einsum('ij,ji',dm,eda.mf.get_j(mol,dm))
     #    logger.mlog(eda.stdout, "err_ej: ",(ej_err))
-    return ejk1,ejk2, ejk3, ejk4
+    return ejk1,ejk2 , ejk3, ejk4
 
 def get_atm2sub(natm, atomlist):
     atm2sub = {}
@@ -58,7 +78,7 @@ def get_atm2sub(natm, atomlist):
             atm2sub[i] = frag_num
     return atm2sub
 
-def get_RR_inter(e1, e2, e3, e4):
+def get_RR_inter(e1, e2):
     natm = e1.shape[0]
     e_1 = {}
     for i in range(natm):
@@ -66,11 +86,12 @@ def get_RR_inter(e1, e2, e3, e4):
     e_2 = {}
     for i in range(natm):
         for j in range(natm):
-            ij = tuple([i+1,j+1].sorted())
+            ij = tuple(sorted((i+1,j+1)))
             if ij not in e_2:
                 e_2[ij] = e2[i,j]
             else:
                 e_2[ij] += e2[i,j]
+"""
     e_3 = {}
     for i in range(natm):
         for j in range(natm):
@@ -93,5 +114,5 @@ def get_RR_inter(e1, e2, e3, e4):
                         e_3[ijkl] = e3[i,j,k,l]
                     else:
                         e_3[ijkl] += e3[i,j,k,l]
-                    
+"""                    
     

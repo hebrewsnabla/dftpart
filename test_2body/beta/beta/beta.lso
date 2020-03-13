@@ -1,0 +1,221 @@
+#==========================================
+# Lower Scaling Quantum Chemistry Program
+#==========================================
+ lsqc 2.4 wli@nju.edu.cn
+ Reference (required):
+ S. Li, W. Li, T. Fang, J. Ma, W. Hua, S. Hua, and Y. Jiang,
+ LSQC Program, Version 2.2, Nanjing University, Nanjing, 2012,
+ see http://itcc.nju.edu.cn/lsqc.
+ (More references are required or recommended for specific module!)
+ The version of LSQC program is licensed to person/research group as follow:
+ Name: Shuhua Li, Jing Ma,  Institute: Nanjing University
+ --------------------------------------------------
+ Command: lsqc -step gensubs beta
+ LSQC task begin from: Sun Feb  9 22:26:24 2020
+ node09:/home/liwei01/wsr/dftpart/test_2body/beta (Linux x86_64)
+ beta.lsi was found
+ Read info from beta.lsi
+ beta.lso was renamed to beta.lso_1
+ Run in serial
+#==========================================
+# Generalized Energy Based Fragmentation Program
+#==========================================
+ GEBF      Generalized Energy Based Fragmentation Linux x86_64 on 16 October 2014 
+ Required References:
+ [1]. S. Li, W. Li, and T. Fang, J. Am. Chem. Soc. 127, 7215 (2005).
+ [2]. N. Jiang, J. Ma, Y. Jiang,J. Chem. Phys. 124, 114112 (2006).
+ [3]. W. Li, S. Li, and Y. Jiang,J. Phys. Chem. A 111, 2193 (2007).
+ [4]. W. Hua, T. Fang, W. Li, J.-G. Yu, and S. Li,J. Phys. Chem. A 112, 10864 (2008).
+ [5]. H. Li, W. Li, S. Li, J. Ma,J. Phys. Chem. B, 112, 7061 (2008).
+ [6]. S. Hua, W. Hua, and S. Li,J. Phys. Chem. A 114, 8126 (2010).
+ [7]. N. Jiang, R. Tan, J. Ma,J. Phys. Chem. B 115, 2801 (2011).
+ --------------------------------------------------
+ GEBF task begin from: Sun Feb  9 22:26:24 2020
+ Read parameters and geometry from gaussian file: beta.keys
+
+# GEBF-GETPARA task begin from: Sun Feb  9 22:26:24 2020
+#parameters
+ memory    = 1gb
+ npsub     =        6
+ mem1p     =        0
+ gprint    = n
+ method    = hf
+ basis     = 6-31g(d,p)
+ pbc       =        0
+ pbclayer  =        1
+ gconnect  =        0
+ maxsubfrag=      100
+ ring      =        0
+ chastep   =        2
+ dis       =     3.00
+ chadis    =    10.00
+ twofrag   =  F
+ trifrag   =  F
+ gamess    =  F
+ psi4      =  F
+ twofc     =  F
+ combcha   =  F
+ fullcha   =  F
+ rescale   =  T
+ uclose    =  F
+ bsse      =    -1.00
+ intrabs   =    -1.00
+ hbr       =     2.90
+ hba       =   120.00
+ charge    = npa
+ frag      = conn
+ gver      = g16
+ gkey      = nosymm
+ opt       =  F
+ ts        =  F
+ force     =  F
+ freq      =  F
+ polar     =  F
+ nmr       =  F
+ bomd      =  F
+ bomdkey   = bomd
+ espfit    =  F
+ propgrid  =  F
+ scalef    =  T
+ tempera   = 0
+ redist    =  F
+ nchar     =        0
+ mult      =        1
+ prog      = 111
+ df_basis  = none
+ td_key    = td=(NStates=5,root=1)
+ mcenergy  =  F
+ tkmd      =  F
+ dim1      =  F
+ multlevl  =  F
+ dftd3     =  F
+ envcha    =  T
+#end
+
+# GEBF-GETGEOM task begin from: Sun Feb  9 22:26:24 2020
+ Number of atoms:                   71
+ Number of non-hydrogen atoms:      35
+ Number of hydrogen atoms:          36
+ Number of ghost atoms:              0
+#geometry
+71   Number of non-hydrogen/hydrogen/ghost atoms =      35     36      0
+     1 C       -28.92011103     -0.10957075      0.40842711
+     2 O       -28.95071106     -0.89272938      1.39294189
+     3 N       -27.79756193      0.02248095     -0.30676127
+     4 H       -27.77391109      0.64422092     -1.08962406
+     5 C       -26.59860648     -0.74574567      0.05777073
+     6 C       -25.34084859      0.05079684     -0.33544078
+     7 O       -25.37453753      0.83347782     -1.32024688
+     8 N       -24.21266043     -0.08851648      0.36951011
+     9 H       -24.18479271     -0.71166951      1.15111005
+    10 C       -23.01400434      0.67529095     -0.00513183
+    11 C       -21.75464747     -0.12467167      0.37589694
+    12 O       -21.78077866     -0.90888683      1.35973061
+    13 N       -20.63281400      0.01470798     -0.33914568
+    14 H       -20.61293610      0.63684480     -1.12181425
+    15 C       -19.42916758     -0.74611779      0.02558019
+    16 C       -18.17588033      0.05841713     -0.36633878
+    17 O       -18.21307112      0.84079634     -1.35122805
+    18 N       -17.04789203     -0.07397281      0.34036862
+    19 H       -17.01782543     -0.69687498      1.12205073
+    20 C       -15.85266112      0.69659926     -0.03174289
+    21 C       -14.58993554     -0.09650152      0.35300664
+    22 O       -14.61516027     -0.88108862      1.33654158
+    23 N       -13.46625697      0.04882560     -0.35813501
+    24 H       -13.44635633      0.67229780     -1.13971313
+    25 C       -12.26060756     -0.70772358      0.00933655
+    26 C       -11.00896958      0.10188677     -0.37723903
+    27 O       -11.04609560      0.88685584     -1.36012807
+    28 H       -26.59440733     -0.92099605      1.11334726
+    29 H       -23.01876762      0.85140986     -1.06051668
+    30 H       -19.42453110     -0.92175130      1.08103723
+    31 H       -15.85573906      0.87240344     -1.08720598
+    32 H       -12.25870636     -0.88517446      1.06451874
+    33 N       -31.37754044     -0.06004522      0.40218815
+    34 H       -30.17893174      0.87251768     -1.02882779
+    35 C       -30.17499615      0.69726489      0.02672781
+    36 C       -32.50543829      0.08362068     -0.30246823
+    37 O       -32.53684167      0.86696814     -1.28680063
+    38 H       -31.35243531     -0.68259063      1.18438064
+    39 C       -12.25192619     -2.05434748     -0.73772470
+    40 H       -13.12156044     -2.61688295     -0.46911276
+    41 H       -11.37432661     -2.60494402     -0.47026516
+    42 H       -12.25382395     -1.87685506     -1.79289696
+    43 C       -15.85891261      2.04442139      0.71319459
+    44 H       -16.73625128      2.59555590      0.44590208
+    45 H       -14.98898493      2.60555186      0.44260872
+    46 H       -15.85592210      1.86861426      1.76863982
+    47 C       -19.42819880     -2.09414299     -0.71902108
+    48 H       -20.29920458     -2.65272994     -0.44653879
+    49 H       -18.55192429     -2.64775115     -0.45337636
+    50 H       -19.43282300     -1.91859011     -1.77450535
+    51 C       -23.01089409      2.02279208      0.74037059
+    52 H       -23.88588443      2.57884226      0.47562253
+    53 H       -22.13860563      2.57925996      0.46773647
+    54 H       -23.00608464      1.84652552      1.79575177
+    55 C       -26.60640476     -2.09404775     -0.68625187
+    56 H       -27.48062171     -2.64717984     -0.41294921
+    57 H       -25.73334779     -2.65287191     -0.42094504
+    58 H       -26.61066487     -1.91888468     -1.74179632
+    59 C       -30.16431954      2.04548029      0.77087064
+    60 H       -29.28888196      2.59674987      0.49767250
+    61 H       -30.16050049      1.87025712      1.82641317
+    62 H       -31.03614071      2.60622754      0.50555805
+    63 C       -33.76534090     -0.70962604      0.09099903
+    64 H       -34.34129416     -0.14032862      0.79033893
+    65 H       -33.47708669     -1.63791452      0.53835734
+    66 N       -34.57268696     -0.97364810     -1.10871180
+    67 H       -34.03433082     -1.50560911     -1.76232640
+    68 H       -35.39075971     -1.48884766     -0.85321049
+    69 H       -34.84215795     -0.10611349     -1.52673020
+    70 O        -9.91295445     -0.02574276      0.31254415
+    71 H        -9.13268089      0.47906053      0.07169634
+#end
+
+# GEBF-GETLINK task begin from: Sun Feb  9 22:26:24 2020
+
+# GEBF-READFRAG task begin from: Sun Feb  9 22:26:24 2020
+#fragment atoms (with hydrogen)
+ ============================================
+  Frag NAtoms Elec Char Mult Atoms (with hydrogen)
+ --------------------------------------------
+    1    20   78    0    1   (1-3,5-8,10,51,55) 4,28,9,29,52-54,56-58
+    2    20   78    0    1   (11-13,15-18,20,43,47) 14,30,19,31,44-46,48-50
+    3    14   62    0    1   (21-23,25-27,39,70) 24,32,40-42,71
+    4    17   56    1    1   (33,35-37,59,63,66) 38,34,60-62,64-65,67-69
+ ============================================
+#end
+
+# GEBF-GETSUBF task begin from: Sun Feb  9 22:26:24 2020
+#final capped fragments
+ ================================
+  Fragment                 Caps
+ --------------------------------
+   1,4                     2
+   2-3                     1
+ ================================
+  Num of capped fragments:    2
+  Num of 1-cent capped fragments:    2
+  Num of 2-cent capped fragments:    0
+  Max frags included in sys:  3
+  Min frags included in sys:  3
+
+ Using F90 code to generate derivative subsys.
+
+# GEBF-GETSUBS task begin from: Sun Feb  9 22:26:24 2020
+#fragment and non-H atom labels in subsystems
+ =====================================================================
+   Sys  Coef Char Mult Fragments              Labels of non-hydr atoms
+ ----------------------- Primitive subsystems  -----------------------
+    1   1.00   1   1   1-2,4                  1-3,5-8,10-13,15-18,20,33,35-37,43,47,51,55,59,63,66
+    2   1.00   0   1   1-3                    1-3,5-8,10-13,15-18,20-23,25-27,39,43,47,51,55,70
+ ----------------------- Derivative subsystems -----------------------
+    3  -1.00   0   1   1-2   ( 1.54 Angs)     1-3,5-8,10-13,15-18,20,43,47,51,55
+ =====================================================================
+  Number of subsystems:    3
+#end
+ --------------------------------------------------
+ GEBF task over on: Sun Feb  9 22:26:24 2020
+ Step CPU time:   0 days  0 hours  0 minutes  0.0 seconds.
+ Step Wall time:  0 days  0 hours  0 minutes    0 seconds.
+ Normal Termination of GEBF Program!
