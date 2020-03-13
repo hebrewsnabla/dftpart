@@ -1,5 +1,6 @@
 *.so
 *.chk
+*.pyc
 tmp*
 mp_example/
 test_2body/ala18_hf/
