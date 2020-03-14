@@ -3,7 +3,7 @@ import numpy as np
 from kit import logger, misc
 import eda_inter
 
-def get_Ejk(eda, atm2bas_p, jk='jk', jktype='bas-eq'):
+def get_Ejk(eda, jk='jk', jktype='bas-eq'):
     '''
     jk: j -> only calc E_j
         jk -> calc E_j, E_k
@@ -15,11 +15,12 @@ def get_Ejk(eda, atm2bas_p, jk='jk', jktype='bas-eq'):
     #e_coul = []
     mol = eda.mol
     dm = eda.dm
-    
+    atm2bas_p = eda.atm2bas_p
+
     if jktype=='bas-eq':
         vj,vk = scf.hf.get_jk(mol,dm)
         atom_ej = []
-        atom_ek  =[]
+        atom_ek = []
         for i in range(mol.natm):
             ej = np.einsum('ij,ji',dm[atm2bas_p[i]],vj[:,atm2bas_p[i]])*.5
             atom_ej.append(ej)

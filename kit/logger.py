@@ -24,7 +24,7 @@ def mlog(out, txt, *args, sep=" ", endl=True):
     out.write(s)
     out.flush()
 
-def log(out, txt, obj, label=None, ncol=10):
+def log(out, txt, obj, label=None, ncol=10, digits=4):
     if isinstance(obj, list):
         mat = np.array(obj)
         dump_mat(out, txt, mat, label, ncol)
@@ -34,13 +34,14 @@ def log(out, txt, obj, label=None, ncol=10):
         out.write("obj type must be list or np.ndarray.\n")
     out.flush()
 
-def dump_1darray(out, txt, mat, label=None, ncol=10):
+def dump_1darray(out, txt, mat, label=None, ncol=10, digits=4):
     out.write(txt + '\n')
     if label is 'n':
         label = ['#%d'%i for i in range(0,ncol)]
         out.write('%s\n' % ' '.join(label))
+    templ = " %" + ".%df " % digits
     for i in range(len(mat)):
-        out.write(' %s' % str(mat[i]))
+        out.write(templ % mat[i])
         if i%ncol == (ncol-1):
             out.write('\n')
     out.write('\n')    

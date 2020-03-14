@@ -170,13 +170,14 @@ class GFEA():
                 logger.mlog(self.stdout, "cen_insub", cen_insub)
                 if 'charge' in self.method:
                     logger.log(self.stdout, "molchgs", molchgs)
-                logger.slog(self.stdout, "-----------------------------------")
-                logger.slog(self.stdout, "frag  layer        atm_intot               atm_insub")
+                logger.slog(self.stdout, "----------------------------------------------------------")
+                logger.slog(self.stdout, "frag  layer        atm_intot               atm_insub                    selfchg")
                 for f in frag_list:
                     logger.slog(self.stdout, "%d      %s     "%(f.label, f.layer), endl=False)
                     logger.mlog(self.stdout, "", f.atm_intot, endl=False)
-                    logger.mlog(self.stdout, "         ", f.atm_insub)
-                logger.slog(self.stdout, "-----------------------------------")
+                    logger.mlog(self.stdout, "         ", f.atm_insub, endl=False)
+                    logger.log(self.stdout, "        ", f.selfchg)
+                logger.slog(self.stdout, "----------------------------------------------------------")
 
                 subeda = scfeda.EDA()
                 subeda.method = self.method
@@ -184,9 +185,11 @@ class GFEA():
                 if 'charge' in self.method:
                     subeda.molchgs = molchgs
                 subeda.output = subeda.gjf[:-4]
+                subeda.verbose = self.verbose
                 subeda.showinter = self.showinter
+                subeda.frag_list = frag_list
                 subatm_E, subE, conv, intert = subeda.kernel()
-                logger.log(self.stdout, "subatm_E", subatm_E)
+                #logger.log(self.stdout, "subatm_E", subatm_E)
                 if conv==False:
                     logger.slog(self.stdout, "Error: EDA not converged")
                 logger.slog(self.stdout, "center atom energies:")
@@ -209,6 +212,7 @@ class Frag():
         self.atm_intot = []
         self.atm_insub = []
         self.layer = None
+        self.selfchg = []
 
 
 def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
@@ -242,6 +246,12 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
         else:
             if 'charge' in gfea.method:
                 molchgs[atomlist_lab.index(label)] = 0.0
+    for f in frags_list:
+        #f.selfchg = np.zeros(len(f.atm_intot))
+        for label in f.atm_intot:
+            f.atm_insub.append(atomlist_lac.index(label)+1)
+            if 'charge' in gfea.method:
+                f.selfchg.append(gfea.chglist[label-1])
     return cen_intot, cen_insub, frags_list, molchgs
 
 def one2zero(alist):
