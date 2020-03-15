@@ -5,3 +5,4 @@ tmp*
 mp_example/
 test_2body/ala18_hf/
 test_2body/ala18_hf_2.3/
+__pycache__/
