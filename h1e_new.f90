@@ -79,26 +79,27 @@ call system_clock(time2)
 return
 end subroutine bgh1e
 
-subroutine h1e_inter(dm,bas2atm,hcore,natm,nao,energy_h1e, e1_1, e1_2, e1_3)
+subroutine h1e_inter(dm,bas2atm,bas2frg,hcore,natm,nao,nfrag,energy_h1e, e1_1, e1_2, e1_3)
 implicit none
 
 integer i,j,l
-integer a,b
+integer a,b,aa,bb
 integer time1,time2
-integer natm,nao
+integer natm,nao,nfrag
 integer bas2atm(nao)
+integer bas2frg(nfrag)
 real*8 dm(nao,nao)
 real*8 hcore(natm,nao,nao)
 real*8 energy_h1e(natm)
-real*8 e1_1(natm)
-real*8 e1_2(natm,natm)
-real*8 e1_3
+real*8 e1_1(nfrag)
+real*8 e1_2(nfrag,nfrag)
+real*8 e1_3(nfrag,nfrag,nfrag)
 !real*8 e1_3(natm,natm,natm)
 real*8 tem
 
 call system_clock(time1)
-!f2py intent(in) :: dm,hcore,bas2atm
-!f2py intent(in) :: natm,nao
+!f2py intent(in) :: dm,hcore,bas2atm,bas2frg
+!f2py intent(in) :: natm,nao,nfrag
 !f2py intent(out) :: energy_h1e,e1_1, e1_2, e1_3
 
 energy_h1e = 0.0d0
@@ -112,6 +113,7 @@ e1_3=0.0d0
 !$omp reduction(+:energy_h1e,e1_1,e1_2, e1_3)
 do i=1,nao 
   a = bas2atm(i)+1
+  aa = bas2frg(i)
   do j=1,nao 
     b = bas2atm(j)+1
     do l=1,natm

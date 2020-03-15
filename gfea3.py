@@ -235,6 +235,17 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
         f.label = envfrg
         f.layer = 'e'
         frags_list.append(f)
+    nfrag = len(frags_list)
+    for label in atomlist_lac:
+        caplabel = nfrag
+        if label==0:
+            capf = Frag()
+            capf.layer = 'cap'
+            capf.label = caplabel + 1
+            caplabel += 1
+            capf.atm_intot = [-1]
+            capf.atm_insub = [atomlist_lac.index(label)+1]
+            frags_list.append(capf)
 
     molchgs = np.zeros(len(atomlist_lab))
     for label in atomlist_lab:
@@ -247,11 +258,12 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
             if 'charge' in gfea.method:
                 molchgs[atomlist_lab.index(label)] = 0.0
     for f in frags_list:
-        #f.selfchg = np.zeros(len(f.atm_intot))
-        for label in f.atm_intot:
-            f.atm_insub.append(atomlist_lac.index(label)+1)
-            if 'charge' in gfea.method:
-                f.selfchg.append(gfea.chglist[label-1])
+        if f.layer is not 'cap':
+            #f.selfchg = np.zeros(len(f.atm_intot))
+            for label in f.atm_intot:
+                f.atm_insub.append(atomlist_lac.index(label)+1)
+                if 'charge' in gfea.method:
+                    f.selfchg.append(gfea.chglist[label-1])
     return cen_intot, cen_insub, frags_list, molchgs
 
 def one2zero(alist):

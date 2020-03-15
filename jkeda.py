@@ -3,7 +3,7 @@ import numpy as np
 from kit import logger, misc
 import eda_inter
 
-def get_Ejk(eda, jk='jk', jktype='bas-eq'):
+def get_Ejk(eda, jk='jk', jktype='py'):
     '''
     jk: j -> only calc E_j
         jk -> calc E_j, E_k
@@ -16,8 +16,9 @@ def get_Ejk(eda, jk='jk', jktype='bas-eq'):
     mol = eda.mol
     dm = eda.dm
     atm2bas_p = eda.atm2bas_p
+    atm2bas_f = eda.atm2bas_f
 
-    if jktype=='bas-eq':
+    if jktype=='py':
         vj,vk = scf.hf.get_jk(mol,dm)
         atom_ej = []
         atom_ek = []
@@ -35,17 +36,17 @@ def get_Ejk(eda, jk='jk', jktype='bas-eq'):
             atm_ejk = np.array(atom_ej), np.array(atom_ek)
         elif jk=='j':
             atm_ejk = np.array(atom_ej)
-    elif jktype=='atom-eq':
-        atm2bas_f = misc.p2f(atm2bas_p)
+    elif jktype=='fort': 
+        #atm2bas_f = misc.p2f(atm2bas_p)
         num = []
         for i in range(len(atm2bas_f)):
             num.append(len(atm2bas_f[i]))
-        num1 = (max(num))
+        num1 = max(num)
 
         for i in range(len(atm2bas_f)):
             if len(atm2bas_f[i])<num1:
                 atm2bas_f[i] = atm2bas_f[i] + [0]*(num1-len(atm2bas_f[i]))
-        singleitem = len(atm2bas_f)
+        #singleitem = len(atm2bas_f)
 
         atm_ = mol._atm.T
         atml = np.shape(mol._atm)[0]

@@ -67,6 +67,7 @@ class EDA():
         self.cen = None
         self.env = None # That's NOT mol.env_ !
         self.frag_list = []
+        self.jktype = 'py'
         # mapping
         self.atm2bas_p = None
         self.atm2bas_f = None
@@ -91,7 +92,7 @@ class EDA():
         logger.slog(self.stdout,"time for E1, E_nuc: %.5f\n", (t2-t1))
         if self.method[0] == 'hf':
             if self.showinter:
-                atm_ej, atm_ek, ejk1, ejk2, ejk3, ejk4 = jkeda.get_Ejk(self,'jk')
+                atm_ej, atm_ek, ejk1, ejk2, ejk3, ejk4 = jkeda.get_Ejk(self, 'jk', self.jktype)
                 atm_ejk = atm_ej + atm_ek
                 RR1 = e1_1 + ejk1
                 RR2 = e1_2 + enuc2 + ejk2
@@ -99,7 +100,7 @@ class EDA():
                 RR4 = ejk4
                 #RR_inter = eda_inter.get_RR_inter(e1_1+ejk1,e1_2+enuc2+ejk2)
             else:
-                atm_ej, atm_ek = jkeda.get_Ejk(self,'jk')
+                atm_ej, atm_ek = jkeda.get_Ejk(self, 'jk', self.jktype)
                 atm_ejk = atm_ej + atm_ek
             atm_E = atm_e1 + atm_enuc + atm_ejk
             t3 = time.time()
@@ -218,14 +219,30 @@ def build(eda, gjf, method):
     logger.mlog(eda.stdout,"method,basis: ", eda.method)
     eda.atm2bas_f, eda.atm2bas_p = get_atm2bas(eda.mol)
     eda.bas2atm = get_bas2atm(eda.atm2bas_f, eda.nao, eda.mol.natm)
+    eda.bas2frg = get_bas2frg(eda.bas2atm, eda.frag_list)
+    nfrag = len(eda.frag_list)
+    ncap = 0
+    for f in eda.frag_list:
+        if f.layer == 'cap': ncap += 1
+    eda.nfrag = (nfrag, ncap) # nfrag includes num of caps
+
     if eda.verbose >= 6:
         logger.mlog(eda.stdout, "atm2bas_f", eda.atm2bas_f)
         logger.mlog(eda.stdout, "atm2bas_p", eda.atm2bas_p)
-        print(eda.bas2atm)
+        #print(eda.bas2atm)
         logger.mlog(eda.stdout, "bas2atm", eda.bas2atm)
     
     eda.built = True
     return eda
+
+def get_bas2frg(bas2atm, frag_list):
+    bas2frg = []
+    for atm in bas2atm:
+        for f in frag_list:
+            if (atm in f.atm_insub):
+                bas2frg.append(f.label)
+    return bas2frg
+
 
 def get_atm2bas(mol):
     atm2bas_p = []
@@ -308,21 +325,24 @@ def get_E1(eda):
     #atom_kinE = []
     mol = eda.mol
     #method = eda.method
-    dm = eda.dm
-    nao = len(dm)
+    #dm = eda.dm
+    nao = eda.nao
     bas2atm = eda.bas2atm #get_bas2atm(atm2bas,nao,mol.natm)
+    bas2frg = eda.bas2frg
     #print(bas2atm)
     kinmat = mol.intor_symmetric('int1e_kin')
     atom_kin = np.zeros(mol.natm)
     if eda.showinter:
-        kin1 = np.zeros(mol.natm)
-        kin2 = np.zeros((mol.natm, mol.natm))
+        #kin1 = np.zeros(mol.natm)
+        #kin2 = np.zeros((mol.natm, mol.natm))
+        kin1 = np.zeros(eda.nfrag)
+        kin2 = np.zeros((eda.nfrag, eda.nfrag))
     for i in range(nao):
         for j in range(nao):
             #print(dm,kin)
-            kin = dm[i,j] * kinmat[i,j]
-            a = int(bas2atm[i])
-            b = int(bas2atm[j])
+            kin = eda.dm[i,j] * kinmat[i,j]
+            a = bas2atm[i]
+            b = bas2atm[j]
             atom_kin[a] = atom_kin[a] + kin
             atom_kin[b] = atom_kin[b] + kin
             if eda.showinter:
@@ -357,14 +377,14 @@ def get_E1(eda):
     #e1 = 0.0
     #atom_h1E = np.zeros(atom_number)
     if eda.showinter:
-        atom_1enuc, e1_1, e1_2, e1_3 = h1e_inter(dm,bas2atm,int1enuc,mol.natm,nao)
+        atom_1enuc, e1_1, e1_2, e1_3 = h1e_inter(eda.dm,bas2atm, bas2frg,int1enuc,mol.natm,nao,eda.nfrag)
         atom_1enuc = np.asarray(atom_1enuc)[0:mol.natm]
         e1_1 = np.asarray(e1_1) + kin1
         e1_2 = np.triu(np.asarray(e1_2) + kin2)
         #intersum = e1_1.sum() + e1_2.sum() + e1_3
         #e1_3 = np.asarray(e1_3)
     else:
-        atom_1enuc = np.asarray(h1e(dm,bas2atm,int1enuc,mol.natm,nao))[0:mol.natm]
+        atom_1enuc = np.asarray(h1e(eda.dm,bas2atm,int1enuc,mol.natm,nao))[0:mol.natm]
     #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout,"atom_1enuc=",atom_1enuc)
     atm_e1 = atom_kin + atom_1enuc
@@ -379,9 +399,9 @@ def get_E1(eda):
     #with open(eda.output+'-eda.log','a') as f:
     if eda.anal:
         tot_akin = atom_kin.sum()
-        kin_err = tot_akin - np.einsum('ij,ji',dm,mol.intor_symmetric('int1e_kin'))
+        kin_err = tot_akin - np.einsum('ij,ji',eda.dm,mol.intor_symmetric('int1e_kin'))
         tot_a1enuc = atom_1enuc.sum()
-        a1enuc_err = tot_a1enuc - np.einsum('ij,ji',dm,moleintor.getints("int1e_nuc_sph",mol._atm,mol._bas, mol._env))
+        a1enuc_err = tot_a1enuc - np.einsum('ij,ji',eda.dm,moleintor.getints("int1e_nuc_sph",mol._atm,mol._bas, mol._env))
         logger.mlog(eda.stdout,"kin_err: ",kin_err)
         logger.mlog(eda.stdout,"1enuc_err: ",a1enuc_err)
     if eda.showinter: atm_e1 = atm_e1, e1_1, e1_2 , e1_3
