@@ -9,6 +9,6 @@ with lib.with_omp_threads(par):
     fr0.gjfname = 'c8b'
     fr0.output = 'c8b'
     fr0.verbose = 9
-    #fr0.showinter = True
+    fr0.showinter = True
     fr0.kernel()
 
