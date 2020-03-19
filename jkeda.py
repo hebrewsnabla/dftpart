@@ -88,7 +88,7 @@ def get_Ejk(eda, jk='jk', jktype='py'):
                 logger.mlog(eda.stdout, "err_ej: ",(ej_err))
                 return atom_ej
 
-    if eda.showinter==True:
+    if eda.showinter:
         #ejk1 = np.zeros(mol.natm)
         #ejk2 = np.zeros((mol.natm, mol.natm))
        

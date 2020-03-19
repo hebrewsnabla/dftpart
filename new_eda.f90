@@ -1,6 +1,4 @@
-!subroutine preri(eri,nao,dm,singleatom,singleitem,num1,twoatom,twoitem,num2,threeatom,threeitem,num3,fouratom,fouritem,num4,listA)
-!subroutine preri(eri,nao,dm,singleatom,singleitem,num1,twoatom,twoitem,num2,listA)
-subroutine preri(atm,atml,bas,basl,env,envl,nao,nshls,dm,singleatom,singleitem,num1,&
+subroutine preri(atm,atml,bas,basl,env,envl,nbas,nshls,dm,bas2atm,natm,&
 atom_energy,energyj_one, energyk_one, energyj_two, energyk_two,energy_three,energy_four)
 implicit none 
 !integer findloc
@@ -10,20 +8,18 @@ integer i,j,k,l,tem,a,b,c,d,flag,di,dj,dk,dl
 integer i0,i1,n,p
 integer m,II,JJ,KK,LL 
 integer mij,mijk,mijkl
-integer singleitem,num1,num
-integer nao
-integer singleatom(singleitem,num1)
-integer single(singleitem*num1)
-integer basis(nao)
+integer natm,num
+!integer nao
+integer nshls, nbas
+integer bas2atm(nbas)
 integer slice
 !real*8 eri(1,nao,nao,nao)
-real*8 dm(nao,nao)
+real*8 dm(nbas,nbas)
 real*8 e_coul,e_coulA,e_coulB,e_coulC
 real*8 e_coul_j,e_coul_k
 !real*8 vjk(nao,nao)
 real*8 sumE
-!real*8 listA(nao,nao,nao,nao)
-real*8 atom_energy(singleitem+1)
+real*8 atom_energy(natm+1)
 real*8 tem1,tem2
 integer time1,time2,time3,time4,t1,t2,t3
 integer atml,basl,envl
@@ -32,17 +28,16 @@ integer atm(6,atml),bas(8,basl)
 real*8 env(envl)
 real*8 buf(:,:,:,:)
 real*8 aoshell(:,:,:,:)
-real*8 energy(singleitem+1)
+real*8 energy(natm+1)
 real*8 schw(:,:)
 ! --------------------------------------------
-!real*8 listA(nao,nao,nao,nao)
-real*8 energyj_one(singleitem)                                  
-real*8 energyk_one(singleitem)                                  
-real*8 energyj_two(singleitem,singleitem)
-real*8 energyk_two(singleitem,singleitem)
-!real*8 energy_three(singleitem,singleitem,singleitem)          
+real*8 energyj_one(natm)                                  
+real*8 energyk_one(natm)                                  
+real*8 energyj_two(natm,natm)
+real*8 energyk_two(natm,natm)
+!real*8 energy_three(natm,natm,natm)          
 real*8 energy_three          
-!real*8 energy_four(singleitem,singleitem,singleitem,singleitem)
+!real*8 energy_four(natm,natm,natm,natm)
 real*8 energy_four
 ! --------------------------------------------
 integer ncf_sh(:),flcf_sh(:,:),cf2sh(:)
@@ -53,15 +48,11 @@ allocatable cf2sh
 allocatable aoshell
 allocatable schw
 integer shls(4)
-integer nshls,nbas
 integer ifi,ils,jfi,jls,kfi,kls,lfi,lls,ibas,kbas,jbas,lbas
-integer natm
 integer ni,nj
 real*8 thresh
 real*8 hf_ene
 logical ieql,ieqj,keql
-!atm1 = reshape((/1, 20,  1, 23,  0,  0,1, 24,  1, 27,  0,  0/),(/6,atml/))
-!bas1 = reshape((/0,  0,  3,  1,  0, 28, 31,  0,1,  0,  3,  1,  0, 28, 31,0/),(/8,basl/))
 
 ! -----------------------------------------------------------------------
 !  f2py -m frame_small5 -c frame_small5.f90 --fcompiler=gfortran --f90flags='-fopenmp' -lgomp
@@ -72,17 +63,15 @@ logical ieql,ieqj,keql
 ! -----------------------------------------------------------------------
 
 !f2py intent(in) :: atm,atml,bas,basl,env,envl,nshls
-!f2py intent(in) :: nao,dm,singleatomi
-!f2py intent(in) :: singleitem,num1
-
+!f2py intent(in) :: nbas,dm,bas2atm
+!f2py intent(in) :: natm
 !f2py intent(out) :: atom_energy,energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
-!f2py depend(nao) :: dm
+
+!f2py depend(nbas) :: dm, bas2atm
 !f2py depend(basl) :: bas
 !f2py depend(envl) :: env
 !f2py depend(atml) :: atm
-
-!f2py depend(singleitem) :: atom_energy,energyj_one,energyk_one,energyj_two,energyk_two
-!,energy_three,energy_four
+!f2py depend(natm) :: atom_energy,energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
 
 !vjk = 0.0d0
 !listA = 0.0d0
@@ -100,29 +89,11 @@ energy_four = 0.0d0
 
 energy = 0.0d0
 
-flag = 1
-do i=1,singleitem
-   do j=1,num1
-      single(flag) = singleatom(i,j)
-      flag = flag + 1
-   enddo
-enddo
-
-num = singleitem * num1
-do i=1,nao
-  tem = Ainclude(i,num,single)
-  if (mod(tem,num1)==0) then
-      basis(i) = tem/num1
-  else 
-      basis(i) = tem/num1 + 1 
-  endif
-enddo
-
 sumE =0.0d0
 hf_ene = 0.0d0
 
-nbas = nao
-natm = singleitem
+!nbas = nao
+!natm = natm
 
 !------------------------------------------------------------ 
 ! obtain the map between contracted functions and contracted shells
@@ -171,8 +142,8 @@ call system_clock(t1)
 !------------------------------------------------------------------
 !$OMP PARALLEL DO schedule(guided) &
 !$omp default(private) &
-!$omp shared(nshls,atm,bas,env,flcf_sh,nbas, &
-!$omp dm,basis,nao,natm,schw,thresh,ncf_sh) &
+!$omp shared(nshls,atm,bas,env,flcf_sh, &
+!$omp dm,bas2atm,nbas,natm,schw,thresh,ncf_sh) &
 !$omp reduction(+:atom_energy,energyj_one, energyk_one, energyj_two, energyk_two, energy_three, energy_four)
 do i=1,nshls
   shls(4) = i - 1 
@@ -210,15 +181,15 @@ do i=1,nshls
     !call system_clock(time2) 
     !write(*,*) "Calc eri time=",time2-time1
     do ibas = ifi,ils
-       a = basis(ibas)
-       do j =ibas,nao 
-          b = basis(j)
+       a = bas2atm(ibas)
+       do j =ibas,nbas
+          b = bas2atm(j)
           ieqj = (ibas/=j)
           tem1 = dm(j,ibas)
           do kbas = kfi,kls
-             c = basis(kbas)
-             do l=kbas,nao
-                d = basis(l)
+             c = bas2atm(kbas)
+             do l=kbas,nbas
+                d = bas2atm(l)
                 keql = (kbas/=l)
                 e_coul_j = 0.5d0*tem1*dm(l,kbas)*aoshell(l,kbas,j,ibas)
                 e_coulA =  0.5d0*dm(kbas,j)*dm(l,ibas)*((-0.5d0)*aoshell(l,kbas,j,ibas))

@@ -96,6 +96,8 @@ class GFEA():
             self.gjflist, fchklist, gmslist = get_subgjf(self.gjfname, self.num_subsys)
             logger.mlog(self.stdout, "atoms in frg (tot order)\n", self.frg_intot)
             logger.mlog(self.stdout, "subsys", self.subsys_lso)
+            self.num_frag = len(self.frg_intot)
+            logger.slog(self.stdout, "number of frags: %d", self.num_frag)
             logger.slog(self.stdout, "number of subsystems: %d", self.num_subsys)
         if self.dm0 == 'Gaussian':
             run_Gau(gjflist)
@@ -188,6 +190,7 @@ class GFEA():
                 subeda.verbose = self.verbose
                 subeda.showinter = self.showinter
                 subeda.frag_list = frag_list
+                subeda.totnum_frag = self.num_frag
                 subatm_E, subE, conv, intert = subeda.kernel()
                 #logger.log(self.stdout, "subatm_E", subatm_E)
                 if conv==False:
@@ -235,9 +238,10 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
         f.label = envfrg
         f.layer = 'e'
         frags_list.append(f)
-    nfrag = len(frags_list)
+    maxfrag = max([max(_cen),max(_env)])
+
     for label in atomlist_lac:
-        caplabel = nfrag
+        caplabel = maxfrag
         if label==0:
             capf = Frag()
             capf.layer = 'cap'

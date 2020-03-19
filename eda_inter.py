@@ -15,16 +15,16 @@ def p2f(atm2bas_p):
 
 
 def jk_inter(eda, atm2bas_p, jk='jk'):
-    atm2bas_f = p2f(atm2bas_p)
-    num = []
-    for i in range(len(atm2bas_f)):
-        num.append(len(atm2bas_f[i]))
-    num1 = max(num)
+    #atm2bas_f = p2f(atm2bas_p)
+    #num = []
+    #for i in range(len(atm2bas_f)):
+    #    num.append(len(atm2bas_f[i]))
+    #num1 = max(num)
 
-    for i in range(len(atm2bas_f)):
-        if len(atm2bas_f[i])<num1:
-            atm2bas_f[i] = atm2bas_f[i] + [0]*(num1-len(atm2bas_f[i]))
-    singleitem = len(atm2bas_f)
+    #for i in range(len(atm2bas_f)):
+    #    if len(atm2bas_f[i])<num1:
+    #        atm2bas_f[i] = atm2bas_f[i] + [0]*(num1-len(atm2bas_f[i]))
+    #singleitem = len(atm2bas_f)
 
     atm_ = eda.mol._atm.T
     atml = np.shape(eda.mol._atm)[0]
@@ -33,6 +33,7 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     env_ = eda.mol._env
     envl = np.shape(eda.mol._env)[0]
     dm = eda.dm
+    mol = eda.mol
     nao = len(dm)
     nbas = eda.mol._bas.shape[0]
     #if eda.verbose > 5:
@@ -42,7 +43,7 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     logger.slog(eda.stdout,"nao=%d",nao)
     logger.slog(eda.stdout,"nbas=%d",nbas)
 
-    atom_ejk, ej1,ek1, ej2, ek2, ejk3, ejk4 = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
+    atom_ejk, ej1,ek1, ej2, ek2, ejk3, ejk4 = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas, dm, eda.bas2atm_f, mol.natm)
     #atom_ejk = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
     #atom_energy = np.array(atom_energy)
     #print(atom_ejk)
