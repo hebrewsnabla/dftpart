@@ -1,6 +1,6 @@
 #from scfeda import p2f
 from new_eda import preri
-from QCKit import logger
+from kit import logger
 #import pymp
 import numpy as np
 
@@ -33,6 +33,7 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     env_ = eda.mol._env
     envl = np.shape(eda.mol._env)[0]
     dm = eda.dm
+    #logger.log(eda.stdout,"dm",dm[-5:])
     mol = eda.mol
     nao = len(dm)
     nbas = eda.mol._bas.shape[0]
@@ -40,29 +41,31 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     #logger.mlog(eda.stdout,"atm_",atm_)
     #logger.mlog(eda.stdout,"bas_",bas_)
     #logger.mlog(eda.stdout,"env_",env_)
-    logger.slog(eda.stdout,"nao=%d",nao)
-    logger.slog(eda.stdout,"nbas=%d",nbas)
+    logger.slog(eda.stdout,"nao=%d",nao)    # num of cGTO
+    logger.slog(eda.stdout,"nbas=%d",nbas)  # num of shells
 
-    atom_ejk, ej1,ek1, ej2, ek2, ejk3, ejk4 = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas, dm, eda.bas2atm_f, mol.natm)
+    atom_ejk, e1, e2, e3, e4 = preri(atm_,atml,bas_,basl,env_,envl, eda.cart, nao,nbas, dm, 
+        eda.bas2atm_f, eda.bas2frg, mol.natm, eda.totnum_frag)
     #atom_ejk = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
     #atom_energy = np.array(atom_energy)
     #print(atom_ejk)
+    ejksum = atom_ejk.sum()
     atom_ejk = np.array(atom_ejk)[0:eda.mol.natm]
     logger.log(eda.stdout_inter,"Atom_ejk=",atom_ejk)
-    ej1 = np.array(ej1)
-    ej2 = np.array(ej2)
-    ek1 = np.array(ek1)
-    ek2 = np.array(ek2)
-    #ejk3 = np.array(ejk3)
-    #ejk4 = np.array(ejk4)
-    ejk1 = ej1+ek1
-    ejk2 = np.triu(ej2+ek2)
+    ejk1 = np.array(e1)
+    ejk2 = np.array(e2)
+    #ek1 = np.array(ek1)
+    #ek2 = np.array(ek2)
+    ejk3 = np.array(e3)
+    ejk4 = np.array(e4)
+    #ejk1 = ej1+ek1
+    #ejk2 = np.triu(ej2+ek2)
     logger.log(eda.stdout_inter,"ejk1=",ejk1)
     logger.log(eda.stdout_inter,"ejk2=",ejk2)
-    logger.mlog(eda.stdout_inter,"ejk3=",ejk3)
-    logger.mlog(eda.stdout_inter,"ejk4=",ejk4)
-    interejksum = ejk1.sum() + ejk2.sum() + ejk3 + ejk4
-    ejksum = atom_ejk.sum()
+    #logger.mlog(eda.stdout_inter,"ejk3=",ejk3)
+    #logger.mlog(eda.stdout_inter,"ejk4=",ejk4)
+    
+    interejksum = ejk1.sum() + ejk2.sum() + ejk3.sum() + ejk4.sum()
     logger.mlog(eda.stdout_inter,"interejksum=",interejksum)
     logger.mlog(eda.stdout_inter,"ejksum=",ejksum)
     #if eda.anal:

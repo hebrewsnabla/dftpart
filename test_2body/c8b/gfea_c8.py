@@ -5,7 +5,7 @@ par = 8
 with lib.with_omp_threads(par):
     fr0 = gfea3.GFEA()
     fr0.inputstyle = 'frg'
-    fr0.method = ['hf', '6-31gss','cart','charge']
+    fr0.method = ['hf', '6-31gss','charge']
     fr0.gjfname = 'c8b'
     fr0.output = 'c8b'
     fr0.verbose = 9

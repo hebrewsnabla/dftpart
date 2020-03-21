@@ -1,24 +1,28 @@
-subroutine preri(atm,atml,bas,basl,env,envl,nbas,nshls,dm,bas2atm,natm,&
-atom_energy,energyj_one, energyk_one, energyj_two, energyk_two,energy_three,energy_four)
+subroutine preri(atm,atml,bas,basl,env,envl,cart, nbas,nshls,dm, bas2atm, bas2frg, natm, nfrg, &
+atom_energy, & !energyj_one, energyk_one, energyj_two, energyk_two,energy_three,energy_four
+e1, e2, e3, e4)
 implicit none 
 !integer findloc
-integer,external :: Ainclude,body3,CINTcgto_spheric
+integer,external :: Ainclude,body3,body4,CINTcgto_spheric, CINTcgto_cart
 !real*8,external :: cint2e_sph
 integer i,j,k,l,tem,a,b,c,d,flag,di,dj,dk,dl
+integer af,bf,cf,df                     ! frags
 integer i0,i1,n,p
 integer m,II,JJ,KK,LL 
-integer mij,mijk,mijkl
-integer natm,num
+!integer mij,mijk,mijkl
+integer natm,nfrg,num
+logical cart                            ! cartesian basis or not
 !integer nao
 integer nshls, nbas
 integer bas2atm(nbas)
+integer bas2frg(nbas)
 integer slice
 !real*8 eri(1,nao,nao,nao)
 real*8 dm(nbas,nbas)
 real*8 e_coul,e_coulA,e_coulB,e_coulC
 real*8 e_coul_j,e_coul_k
 !real*8 vjk(nao,nao)
-real*8 sumE
+!real*8 sumE
 real*8 atom_energy(natm+1)
 real*8 tem1,tem2
 integer time1,time2,time3,time4,t1,t2,t3
@@ -28,17 +32,21 @@ integer atm(6,atml),bas(8,basl)
 real*8 env(envl)
 real*8 buf(:,:,:,:)
 real*8 aoshell(:,:,:,:)
-real*8 energy(natm+1)
+!real*8 energy(natm+1)
 real*8 schw(:,:)
 ! --------------------------------------------
-real*8 energyj_one(natm)                                  
-real*8 energyk_one(natm)                                  
-real*8 energyj_two(natm,natm)
-real*8 energyk_two(natm,natm)
+!real*8 energyj_one(natm)                                  
+!real*8 energyk_one(natm)                                  
+!real*8 energyj_two(natm,natm)
+!real*8 energyk_two(natm,natm)
 !real*8 energy_three(natm,natm,natm)          
-real*8 energy_three          
+!real*8 energy_three          
 !real*8 energy_four(natm,natm,natm,natm)
-real*8 energy_four
+!real*8 energy_four
+real*8 e1(nfrg+2)
+real*8 e2(nfrg+2,nfrg+2)
+real*8 e3(nfrg+2,nfrg+2,nfrg+2)
+real*8 e4(nfrg+2,nfrg+2,nfrg+2,nfrg+2)
 ! --------------------------------------------
 integer ncf_sh(:),flcf_sh(:,:),cf2sh(:)
 allocatable buf
@@ -62,16 +70,18 @@ logical ieql,ieqj,keql
 !  f2py -m new_eda -c new_eda.f90  -L/home/liwei01/zcheng/pyscf/pyscf/lib/ -lcint --fcompiler=intelem --compiler=intelem -liomp5
 ! -----------------------------------------------------------------------
 
-!f2py intent(in) :: atm,atml,bas,basl,env,envl,nshls
-!f2py intent(in) :: nbas,dm,bas2atm
-!f2py intent(in) :: natm
-!f2py intent(out) :: atom_energy,energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
+!f2py intent(in) :: atm,atml,bas,basl,env,envl,cart, nshls
+!f2py intent(in) :: nbas,dm,bas2atm,bas2frg,natm,nfrg
+!f2py intent(out) :: atom_energy, e1,e2,e3,e4
+!energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
 
-!f2py depend(nbas) :: dm, bas2atm
+!f2py depend(nbas) :: dm, bas2atm, bas2frg
 !f2py depend(basl) :: bas
 !f2py depend(envl) :: env
 !f2py depend(atml) :: atm
-!f2py depend(natm) :: atom_energy,energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
+!f2py depend(natm) :: atom_energy
+!f2py depend(nfrg) :: e1,e2,e3,e4
+!,energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
 
 !vjk = 0.0d0
 !listA = 0.0d0
@@ -79,21 +89,30 @@ call system_clock(t1)
 e_coul = 0.0d0
 atom_energy = 0.0d0
 ! --------------------------------------
-energyj_one = 0.0d0
-energyk_one = 0.0d0
-energyj_two = 0.0d0
-energyk_two = 0.0d0
-energy_three = 0.0d0
-energy_four = 0.0d0
+!energyj_one = 0.0d0
+!energyk_one = 0.0d0
+!energyj_two = 0.0d0
+!energyk_two = 0.0d0
+!energy_three = 0.0d0
+!energy_four = 0.0d0
+e1 = 0.0d0
+e2 = 0.0d0
+e3 = 0.0d0
+e4 = 0.0d0
 ! --------------------------------------
 
-energy = 0.0d0
+!energy = 0.0d0
 
-sumE =0.0d0
-hf_ene = 0.0d0
+!sumE =0.0d0
+!hf_ene = 0.0d0
 
 !nbas = nao
 !natm = natm
+!write(*,*) 'nbas',nbas
+!do b=1,nbas
+!    write(*,*) b,bas2frg(b)
+!enddo
+
 
 !------------------------------------------------------------ 
 ! obtain the map between contracted functions and contracted shells
@@ -107,7 +126,11 @@ allocate(schw(nshls,nshls))
 !---------------------------------------------------
 
 do i=1,nshls
-   ncf_sh(i) = cintcgto_spheric(i-1,bas)
+    if (cart) then
+        ncf_sh(i) = cintcgto_cart(i-1,bas)
+    else
+        ncf_sh(i) = cintcgto_spheric(i-1,bas)
+    endif
 enddo
 
 allocate(cf2sh(nbas))
@@ -129,7 +152,11 @@ do i=1,nshls
         shls(2)=j-1
         shls(4)=j-1
         allocate(buf(ni,nj,ni,nj))
-        call cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
+        if (cart) then
+            call cint2e_cart(buf, shls, atm, 0, bas, 0, env, 0_8)
+        else
+            call cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
+        endif
         schw(i,j)=maxval(buf)
         if (i/=j) schw(j,i)=schw(i,j)
         deallocate(buf)
@@ -143,8 +170,10 @@ call system_clock(t1)
 !$OMP PARALLEL DO schedule(guided) &
 !$omp default(private) &
 !$omp shared(nshls,atm,bas,env,flcf_sh, &
-!$omp dm,bas2atm,nbas,natm,schw,thresh,ncf_sh) &
-!$omp reduction(+:atom_energy,energyj_one, energyk_one, energyj_two, energyk_two, energy_three, energy_four)
+!$omp dm,bas2atm,bas2frg,nbas,natm,schw,thresh,ncf_sh) &
+!$omp reduction(+:atom_energy, e1,e2,e3,e4)
+
+! reduction(+:atom_energy,energyj_one, energyk_one, energyj_two, energyk_two, energy_three, energy_four)
 do i=1,nshls
   shls(4) = i - 1 
   ifi = flcf_sh(1,i)
@@ -171,7 +200,11 @@ do i=1,nshls
       !write(*,*) di,dj,dk,dl
         if (dsqrt(schw(j,k))*dsqrt(schw(i,l))>thresh) then
             allocate(buf(dj,dk,dl,di))
-            call cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
+            if (cart) then
+                call cint2e_cart(buf, shls, atm, 0, bas, 0, env, 0_8)
+            else
+                call cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
+            endif
             aoshell(jfi:jls,:,lfi:lls,:) = buf(:,:,:,:)
             !write(*,*) "buf\n",buf
             deallocate(buf)
@@ -182,14 +215,19 @@ do i=1,nshls
     !write(*,*) "Calc eri time=",time2-time1
     do ibas = ifi,ils
        a = bas2atm(ibas)
+       af = bas2frg(ibas)
        do j =ibas,nbas
           b = bas2atm(j)
+          bf = bas2frg(j)
+          !write(*,*) j, bf
           ieqj = (ibas/=j)
           tem1 = dm(j,ibas)
           do kbas = kfi,kls
              c = bas2atm(kbas)
+             cf = bas2frg(kbas)
              do l=kbas,nbas
                 d = bas2atm(l)
+                df = bas2frg(l)
                 keql = (kbas/=l)
                 e_coul_j = 0.5d0*tem1*dm(l,kbas)*aoshell(l,kbas,j,ibas)
                 e_coulA =  0.5d0*dm(kbas,j)*dm(l,ibas)*((-0.5d0)*aoshell(l,kbas,j,ibas))
@@ -214,31 +252,56 @@ do i=1,nshls
                 endif
 
                 e_coul = e_coul_j + e_coul_k
-                if (dabs(e_coul) > 1D-12) then
-
+                !if (bf==4) then
+                !    write(*,*) af,bf,cf,df, e_coul
+                !endif
+                
+                !if (dabs(e_coul) > 1D-12) then
+                if (.true.) then
                   
-                  tem = body3(a,b,c,d,natm,m,II,JJ,KK,LL)
+                  !tem = body3(a,b,c,d,natm,m,II,JJ,KK,LL)
 
                   atom_energy(a) = atom_energy(a) + e_coul/4.0
                   atom_energy(b) = atom_energy(b) + e_coul/4.0
                   atom_energy(c) = atom_energy(c) + e_coul/4.0
-                  atom_energy(d) = atom_energy(d) + e_coul/4.0 
+                  atom_energy(d) = atom_energy(d) + e_coul/4.0
+
                   !write(*,*) "1111"  
-                  if ( m ==1 ) then
-                      energyj_one(II) = energyj_one(II) + e_coul_j 
-                      energyk_one(II) = energyk_one(II) + e_coul_k 
-                  else if ( m ==2 ) then 
-                      energyj_two(II,JJ) = energyj_two(II,JJ) + e_coul_j 
-                      energyk_two(II,JJ) = energyk_two(II,JJ) + e_coul_k 
-                      energyj_two(JJ,II) = energyj_two(JJ,II) + e_coul_j 
-                      energyk_two(JJ,II) = energyk_two(JJ,II) + e_coul_k 
-                  else if ( m ==3 ) then 
-                      !energy_three(II,JJ,KK) = energy_three(II,JJ,KK) + e_coul 
-                      energy_three = energy_three + e_coul 
-                  else 
-                      !energy_four(II,JJ,KK,LL) = energy_four(II,JJ,KK,LL) + e_coul 
-                      energy_four = energy_four + e_coul 
-                  endif 
+                  !if ( m ==1 ) then
+                  !    energyj_one(II) = energyj_one(II) + e_coul_j 
+                  !    energyk_one(II) = energyk_one(II) + e_coul_k 
+                  !else if ( m ==2 ) then 
+                  !    energyj_two(II,JJ) = energyj_two(II,JJ) + e_coul_j 
+                  !    energyk_two(II,JJ) = energyk_two(II,JJ) + e_coul_k 
+                  !    energyj_two(JJ,II) = energyj_two(JJ,II) + e_coul_j 
+                  !    energyk_two(JJ,II) = energyk_two(JJ,II) + e_coul_k 
+                  !else if ( m ==3 ) then 
+                  !    !energy_three(II,JJ,KK) = energy_three(II,JJ,KK) + e_coul 
+                  !    energy_three = energy_three + e_coul 
+                  !else 
+                  !    !energy_four(II,JJ,KK,LL) = energy_four(II,JJ,KK,LL) + e_coul 
+                  !    energy_four = energy_four + e_coul 
+                  !endif 
+                tem = body4(af,bf,cf,df,m,II,JJ,KK,LL)
+                !if (bas2frg(1)==2) then
+                !    stop
+                !endif
+                               
+                if (m==1) then
+                    e1(II) = e1(II) + e_coul
+                else if (m==2) then
+                    if ((II==3) .and. (JJ==4)) then
+                        !if (dabs(aoshell(l,kbas,j,ibas)) > 1d-15) then
+                        !write(*,*) af,bf,cf,df, e_coul, aoshell(l,kbas,j,ibas)
+                        !endif
+                    endif
+                    e2(II,JJ) = e2(II,JJ) + e_coul
+                else if (m==3) then
+                    e3(II,JJ,KK) = e3(II,JJ,KK) + e_coul
+                else
+                    e4(II,JJ,KK,LL) = e4(II,JJ,KK,LL) + e_coul
+                endif
+                  
 
                 endif
           enddo
@@ -442,4 +505,100 @@ function body3(a,b,c,d,natm,m,II,JJ,KK,LL)
 
 return
 end function body3
+
+
+function body4(a,b,c,d,m,II,JJ,KK,LL)
+   implicit none
+   integer :: a,b,c,d,m,II,JJ,KK,LL
+   integer :: tmp
+   integer :: body4
+   II = 0
+   JJ = 0
+   KK = 0
+   LL = 0
+   m = 0
+   if (a/=b) then
+       II = a
+       JJ = b
+       m = m+2
+       if ((c /= II) .and. (c /= JJ)) then
+           KK = c
+           m = m+1
+           if ((d /= II) .and. (d /= JJ) .and. (d/=KK)) then
+               LL = d
+               m = m+1
+           endif
+       else    
+           if ((d /= II) .and. (d /= JJ) ) then
+               KK = d
+               m = m+1
+           endif
+       endif
+   else
+       II = a
+       m = m+1
+       if (c /= II) then
+           JJ = c
+           m = m+1
+           if ((d /= II) .and. (d /= JJ) ) then
+               KK = d
+               m = m+1
+           endif
+       else
+           if (d /= II)  then
+               JJ = d
+               m = m+1
+           endif
+       endif
+   endif
+    ! sorting to make II < JJ < KK < LL
+    if (m>1) then
+        if (JJ < II) then
+            tmp = JJ
+            JJ = II
+            II = tmp
+        endif
+    endif
+    if (m>2) then
+        if (KK < JJ) then
+            if (KK < II) then
+                tmp = KK
+                KK = JJ
+                JJ = II
+                II = tmp
+            else
+                tmp = KK
+                KK = JJ
+                JJ = tmp
+            endif
+        endif
+    endif
+    if (m==4) then
+        if (LL < KK) then
+            if (LL < JJ) then
+                if (LL < II) then
+                    tmp = LL
+                    LL = KK
+                    KK = JJ
+                    JJ = II
+                    II = tmp
+                else
+                    tmp = LL
+                    LL = KK
+                    KK = JJ
+                    JJ = tmp
+                endif
+            else
+                tmp = LL
+                LL = KK
+                KK = tmp
+            endif
+        endif
+    endif               
+
+    body4 = 0
+    !PRINT *,a,b,c,d,'->', II, JJ ,KK ,LL,m,natm
+
+return
+end function body4
 

@@ -87,18 +87,18 @@ class EDA():
             atm_e1, e1_1, e1_2 = get_E1(self)
         else:
             atm_e1 = get_E1(self)
-        atm_enuc, enuc2 = get_Enuc(self)
+        atm_enuc, enuc1, enuc2 = get_Enuc(self)
         t2 = time.time()
-        #with open(self.output+'-eda.log','a') as f:
+        #with open(self.output+'-eda.log','a') as f
         logger.slog(self.stdout,"time for E1, E_nuc: %.5f\n", (t2-t1))
         if self.method[0] == 'hf':
             if self.showinter:
                 atm_ej, atm_ek, ejk1, ejk2, ejk3, ejk4 = jkeda.get_Ejk(self, 'jk', self.jktype)
                 atm_ejk = atm_ej + atm_ek
-                '''RR1 = e1_1 + ejk1
+                RR1 = e1_1 + enuc1 + ejk1
                 RR2 = e1_2 + enuc2 + ejk2
-                RR3 = e1_3 + ejk3
-                RR4 = ejk4'''
+                RR3 = ejk3
+                RR4 = ejk4
                 #RR_inter = eda_inter.get_RR_inter(e1_1+ejk1,e1_2+enuc2+ejk2)
             else:
                 atm_ej, atm_ek = jkeda.get_Ejk(self, 'jk', self.jktype)
@@ -401,7 +401,7 @@ def get_E1(eda):
         atom_1enuc, e1_1, e1_2 = h1e_inter(eda.dm,bas2atm, bas2frg, atm2frg, int1enuc,mol.natm,nao,eda.totnum_frag+2)
         atom_1enuc = np.asarray(atom_1enuc)[0:mol.natm]
         e1_1 = np.asarray(e1_1) + kin1
-        print(e1_2)
+        #print(e1_2)
         #print(kin1,kin2)
         e1_2 = np.triu(np.asarray(e1_2) + kin2)
         #intersum = e1_1.sum() + e1_2.sum() + e1_3
@@ -477,5 +477,5 @@ def get_Enuc(eda):
         tot_enucnuc = atm_enucnuc.sum()
         enucnuc_err = tot_enucnuc - np.einsum('i,ij,j', charges, 1./rr, charges) * .5
         logger.mlog(eda.stdout, "err_enucnuc", enucnuc_err)
-    atm_enucnuc = atm_enucnuc, enuc2
+    atm_enucnuc = atm_enucnuc, enuc1, enuc2
     return atm_enucnuc
