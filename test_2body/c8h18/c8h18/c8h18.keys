@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#
+#main
+ main_chk='c8h18.chk'
+ main_nproc=8
+ main_method='hf'
+ main_basis='6-31g**'
+ main_5d=true
+ main_charge=0
+ main_multiplicity=1
+ main_mem='1gb'
+#end
+#gebf
+ gebf_dis=3.0
+ gebf_frag='read'
+ gebf_charge='npa'
+ gebf_jobs=4
+ gebf_gver=g16
+#end

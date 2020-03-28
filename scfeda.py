@@ -10,10 +10,11 @@ from pyscf.scf import _vhf
 # dftpart module
 from new_eda import preri
 from h1e_new import h1e, bgh1e, h1e_inter
-import xceda, jkeda
+import xceda, jkeda, eda_inter
 import bg
 import eda_inter
 from kit import logger, dft_kit, gjf_kit, misc
+import gfea3
 
 # others
 import numpy as np
@@ -66,7 +67,8 @@ class EDA():
         self.bgchgs = None # background charges
         self.cen = None
         self.env = None # That's NOT mol.env_ !
-        self.frag_list = []
+        self.frag_list = None
+        self.lso = None
         self.jktype = 'py'
         # mapping
         self.atm2bas_p = None
@@ -84,7 +86,7 @@ class EDA():
         t1 = time.time()
         #atm2bas_f, atm2bas_p = get_atm2bas(self.mol)
         if self.showinter:
-            atm_e1, e1_1, e1_2 = get_E1(self)
+            atm_e1, e1_1, e1_2, e1_3 = get_E1(self)
         else:
             atm_e1 = get_E1(self)
         atm_enuc, enuc1, enuc2 = get_Enuc(self)
@@ -97,7 +99,7 @@ class EDA():
                 atm_ejk = atm_ej + atm_ek
                 RR1 = e1_1 + enuc1 + ejk1
                 RR2 = e1_2 + enuc2 + ejk2
-                RR3 = ejk3
+                RR3 = dict_merge(ejk3,e1_3)
                 RR4 = ejk4
                 #RR_inter = eda_inter.get_RR_inter(e1_1+ejk1,e1_2+enuc2+ejk2)
             else:
@@ -159,15 +161,30 @@ class EDA():
             logger.slog(self.stdout,"%s %i %16.10f", self.mol.atom_symbol(i),i+1,atm_E[i])
         inter_terms = []
         if self.showinter: 
-            '''logger.log(self.stdout_inter, "RR1",RR1)
+            logger.log(self.stdout_inter, "RR1",RR1)
             logger.log(self.stdout_inter, "RR2",RR2)
             logger.mlog(self.stdout_inter, "RR3",RR3)
             logger.mlog(self.stdout_inter, "RR4",RR4)
             inter_terms = [RR1, RR2, RR3, RR4] 
-            if 'charge' in self.method:
-                inter_terms.append(bg2) 
-                inter_terms.append(bg3)''' 
+            #if 'charge' in self.method:
+            #    inter_terms.append(bg2) 
+            #    inter_terms.append(bg3)
         return atm_E, totE, conv, inter_terms
+
+    def get_frags(self):
+        subsys_lso, num_subsys, frg_intot = gfea3.lso_parser(self.lso)
+        frags_list = []
+        for cenfrg in range(1,len(frg_intot)+1):
+            f = gfea3.Frag()
+            f.atm_intot = frg_intot[cenfrg-1]
+            f.atm_insub = frg_intot[cenfrg-1]
+            f.label = cenfrg
+            f.layer = 'c'
+            frags_list.append(f)
+        self.totnum_frag = len(frg_intot)
+        self.frag_list = frags_list
+        
+
 
 def build(eda, gjf, method):
 
@@ -210,6 +227,7 @@ def build(eda, gjf, method):
 
     eda.dm = mf.make_rdm1()
     eda.nao = len(eda.dm)
+    eda.cart = mol.cart
 
     os.system("echo '' > "+eda.output+'-eda.log')
     eda.stdout = open(eda.output+'-eda.log','a')
@@ -224,6 +242,8 @@ def build(eda, gjf, method):
     eda.bas2atm, eda.bas2atm_f = get_bas2atm(eda.atm2bas_f, eda.nao, eda.mol.natm) 
     #     atm starts from 0
     # _f: atm starts from 1
+    if eda.frag_list is None:
+        eda.get_frags()
     eda.bas2frg = get_bas2frg(eda.bas2atm, eda.frag_list)           # frg starts from 1
     eda.atm2frg = get_atm2frg(mol.natm, eda.frag_list)
     eda.nfrag = len(eda.frag_list)
@@ -374,9 +394,9 @@ def get_E1(eda):
     atom_kin = atom_kin/2
     #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout,"atom_kinE=",atom_kin)
-    #if eda.showinter:
-    #    logger.log(eda.stdout_inter,"kin1",kin1)
-    #    logger.log(eda.stdout_inter,"kin2",kin2)
+    if eda.showinter:
+        logger.log(eda.stdout_inter,"kin1",kin1)
+        logger.log(eda.stdout_inter,"kin2",kin2)
 
     fakeatm = []
     for n in range(mol.natm):
@@ -385,8 +405,9 @@ def get_E1(eda):
             if (i!=n):
                 back[i,0] = 0
         fakeatm.append(back)
-    fakeatm = np.array(fakeatm)
-
+    #fakeatm = np.array(fakeatm)
+    #print(mol._atm)
+    #print(fakeatm)
     int1enuc = []
     for i in range(mol.natm):
         if mol.cart:
@@ -398,8 +419,10 @@ def get_E1(eda):
     #atom_h1E = np.zeros(atom_number)
     if eda.showinter:
         #print(atm2frg,mol.natm)
-        atom_1enuc, e1_1, e1_2 = h1e_inter(eda.dm,bas2atm, bas2frg, atm2frg, int1enuc,mol.natm,nao,eda.totnum_frag+2)
+        print(int1enuc[0][:3,:3])
+        atom_1enuc, e1_1, e1_2, e1_3 = h1e_inter(eda.dm,bas2atm, bas2frg, atm2frg, int1enuc,mol.natm,nao,eda.totnum_frag+2)
         atom_1enuc = np.asarray(atom_1enuc)[0:mol.natm]
+        logger.log(eda.stdout, "e1n_1", e1_1)
         e1_1 = np.asarray(e1_1) + kin1
         #print(e1_2)
         #print(kin1,kin2)
@@ -407,7 +430,7 @@ def get_E1(eda):
         #intersum = e1_1.sum() + e1_2.sum() + e1_3
         #e1_3 = np.asarray(e1_3)
         #print(e1_3)
-        #e1_3 = simp3(e1_3, eda.nfrag)
+        e1_3 = eda_inter.simp3(e1_3, eda.nfrag)
     else:
         atom_1enuc = np.asarray(h1e(eda.dm,bas2atm,int1enuc,mol.natm,nao))[0:mol.natm]
     #with open(eda.output+'-eda.log','a') as f:
@@ -422,24 +445,29 @@ def get_E1(eda):
     anal = True
     if anal:
         tot_akin = atom_kin.sum()
-        #tot_kin = np.einsum('ij,ji',eda.dm,mol.intor_symmetric('int1e_kin'))
+        tot_kin = np.einsum('ij,ji',eda.dm,mol.intor_symmetric('int1e_kin'))
         tot_fkin = kin1.sum() + np.triu(kin2).sum()
         tot_a1enuc = atom_1enuc.sum()
-        #tot_1enuc = np.einsum('ij,ji',eda.dm,moleintor.getints("int1e_nuc_sph",mol._atm,mol._bas, mol._env))
-        tot_fe1 = e1_1.sum() + e1_2.sum()
+        tot_1enuc = np.einsum('ij,ji',eda.dm,moleintor.getints("int1e_nuc_sph",mol._atm,mol._bas, mol._env))
+        tot_fe1 = e1_1.sum() + e1_2.sum() + sum(e1_3.values())
+
+        '''basis_range = range(53)
+        dm1 = eda.dm[np.ix_(basis_range, basis_range)]
+        inte1n1 = np.zeros((nao,nao))
+        for i in range(7):
+            inte1n1 += int1enuc[i]
+        inte1n1 = inte1n1[np.ix_(basis_range, basis_range)]
+        e1n1 = np.einsum('ij,ji', dm1, inte1n1)
+        logger.mlog(eda.stdout, "old_e1_1", e1n1)'''
+
         logger.mlog(eda.stdout,"a_e1 ", tot_akin + tot_a1enuc)
-        logger.mlog(eda.stdout,"e1 ",tot_fe1)
-    if eda.showinter: atm_e1 = atm_e1, e1_1, e1_2 #, e1_3
+        #logger.mlog(eda.stdout,"a_e1k ", tot_akin)
+        #logger.mlog(eda.stdout,"a_e1n ", tot_a1enuc)
+        logger.mlog(eda.stdout,"f_e1 ",tot_fe1)
+        logger.mlog(eda.stdout,"t_e1", tot_kin + tot_1enuc)
+    if eda.showinter: atm_e1 = atm_e1, e1_1, e1_2 , e1_3
     return atm_e1
 
-def simp3(e3, nfrag):
-    e3simp = {}
-    for f in range(nfrag):
-        for g in range(f+1,nfrag):
-            for h in range(g+1, nfrag):
-                fgh = "%d,%d,%d"%(f,g,h)
-                e3simp[fgh] = e3[f,g,h]
-    return e3simp
 
 def get_Enuc(eda):
     mol = eda.mol
@@ -463,19 +491,41 @@ def get_Enuc(eda):
                 if g.label < f.label:
                     continue
                 else:
-                    tem = 0.0
-                    for i in f.atm_insub:
-                        for j in g.atm_insub:
-                            tem += charges[i-1]*charges[j-1]/rr[i-1][j-1]
                     if g.label == f.label:
-                        enuc1[f.label] = tem
+                        tem = 0.0
+                        for i in f.atm_insub:
+                            for j in f.atm_insub:
+                                if j > i:
+                                    tem += charges[i-1]*charges[j-1]/rr[i-1][j-1]
+                        enuc1[f.label-1] = tem
                     else:
-                        enuc2[f.label, g.label] = tem
+                        tem = 0.0
+                        for i in f.atm_insub:
+                            for j in g.atm_insub:
+                                tem += charges[i-1]*charges[j-1]/rr[i-1][j-1]
+                        enuc2[f.label-1, g.label-1] = tem
         logger.log(eda.stdout_inter,"enucnuc_1",enuc1)
         logger.log(eda.stdout_inter,"enucnuc_2",enuc2)
+        tenuc = np.einsum('i,ij,j', charges, 1./rr, charges) * .5 
+        #aenuc = atm_enucnuc.sum()
+        fenuc = enuc1.sum() + enuc2.sum()
+        logger.slog(eda.stdout_inter, "tenuc: %f", tenuc)
+        #logger.slog(eda.stdout_inter, "aenuc: %f", aenuc)
+        logger.slog(eda.stdout_inter, "fenuc: %f", fenuc)
+
     if eda.anal:
         tot_enucnuc = atm_enucnuc.sum()
         enucnuc_err = tot_enucnuc - np.einsum('i,ij,j', charges, 1./rr, charges) * .5
         logger.mlog(eda.stdout, "err_enucnuc", enucnuc_err)
     atm_enucnuc = atm_enucnuc, enuc1, enuc2
     return atm_enucnuc
+
+def dict_merge(*dicts):
+    sum_dict = {}
+    for d in dicts:
+        for k,v in d.items():
+            if k in sum_dict.keys():
+                sum_dict[k] += v
+            else:
+                sum_dict[k] = v
+    return sum_dict

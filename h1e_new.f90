@@ -79,7 +79,7 @@ call system_clock(time2)
 return
 end subroutine bgh1e
 
-subroutine h1e_inter(dm,bas2atm,bas2frg,atm2frg,hcore,natm,nao,nfrag,energy_h1e, e1_1, e1_2)
+subroutine h1e_inter(dm,bas2atm,bas2frg,atm2frg,hcore,natm,nao,nfrag,energy_h1e, e1_1, e1_2, e1_3)
 implicit none
 
 integer i,j,l
@@ -94,7 +94,7 @@ real*8 hcore(natm,nao,nao)
 real*8 energy_h1e(natm)
 real*8 e1_1(nfrag)
 real*8 e1_2(nfrag,nfrag)
-!real*8 e1_3(nfrag,nfrag,nfrag)
+real*8 e1_3(nfrag,nfrag,nfrag)
 !real*8 e1_3(natm,natm,natm)
 real*8 tem
 real*8 H1E_THRESH
@@ -102,35 +102,37 @@ real*8 H1E_THRESH
 call system_clock(time1)
 !f2py intent(in) :: dm,hcore,bas2atm,bas2frg,atm2frg
 !f2py intent(in) :: natm,nao,nfrag
-!f2py intent(out) :: energy_h1e,e1_1, e1_2
-!, e1_3
+!f2py intent(out) :: energy_h1e,e1_1, e1_2, e1_3
 
 !f2py depend(natm) :: atm2frg, energy_h1e, hcore
 !f2py depend(nao) :: dm, hcore, bas2atm,bas2frg
-!f2py depend(nfrag) :: e1_1, e1_2
-!, e1_3
+!f2py depend(nfrag) :: e1_1, e1_2, e1_3
 
 energy_h1e = 0.0d0
 e1_1=0.0d0 
 e1_2=0.0d0
-!e1_3=0.0d0
+e1_3=0.0d0
 H1E_THRESH = 1.0d-12
+
+write(*,*) hcore(1,1,2), hcore(1,2,3)
+  
 
 !$OMP PARALLEL DO schedule(guided) &
 !$omp default(private) &
 !$omp shared(dm,bas2atm,bas2frg,atm2frg,hcore,nao,natm,H1E_THRESH) &
-!$omp reduction(+:energy_h1e,e1_1,e1_2)
+!$omp reduction(+:energy_h1e,e1_1,e1_2, e1_3)
 do i=1,nao 
   a = bas2atm(i)+1
   aa = bas2frg(i)
   do j=1,nao 
     b = bas2atm(j)+1
-    bb = bas2frg(i)
+    bb = bas2frg(j)
     do l=1,natm
       ll = atm2frg(l)
       !write(*,*) aa,bb,ll
       tem = dm(i,j) * hcore(l,j,i)
-      if (dabs(tem) > H1E_THRESH) then 
+      !if (dabs(tem) > H1E_THRESH) then 
+      if (.true.) then
           energy_h1e(l) = energy_h1e(l) + tem*1/2.0d0
           energy_h1e(a) = energy_h1e(a) + tem*1/4.0d0
           energy_h1e(b) = energy_h1e(b) + tem*1/4.0d0
@@ -146,15 +148,14 @@ do i=1,nao
             if ((aa==ll) .or. (bb==ll)) then
               e1_2(aa,bb) = e1_2(aa,bb) + tem
               e1_2(bb,aa) = e1_2(bb,aa) + tem
-            ! e1_3 are all zero
-            !else
-            !  write(*,*) aa,bb,ll,tem
-            !  e1_3(aa,bb,ll) = e1_3(aa,bb,ll) + tem
-            !  e1_3(aa,ll,bb) = e1_3(aa,ll,bb) + tem
-            !  e1_3(bb,aa,ll) = e1_3(bb,aa,ll) + tem
-            !  e1_3(bb,ll,aa) = e1_3(bb,ll,aa) + tem
-            !  e1_3(ll,aa,bb) = e1_3(ll,aa,bb) + tem
-            !  e1_3(ll,bb,aa) = e1_3(ll,bb,aa) + tem
+            else
+              !write(*,*) aa,bb,ll,tem
+              e1_3(aa,bb,ll) = e1_3(aa,bb,ll) + tem
+              e1_3(aa,ll,bb) = e1_3(aa,ll,bb) + tem
+              e1_3(bb,aa,ll) = e1_3(bb,aa,ll) + tem
+              e1_3(bb,ll,aa) = e1_3(bb,ll,aa) + tem
+              e1_3(ll,aa,bb) = e1_3(ll,aa,bb) + tem
+              e1_3(ll,bb,aa) = e1_3(ll,bb,aa) + tem
             endif
           endif
       

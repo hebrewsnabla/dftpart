@@ -15,16 +15,6 @@ def p2f(atm2bas_p):
 
 
 def jk_inter(eda, atm2bas_p, jk='jk'):
-    #atm2bas_f = p2f(atm2bas_p)
-    #num = []
-    #for i in range(len(atm2bas_f)):
-    #    num.append(len(atm2bas_f[i]))
-    #num1 = max(num)
-
-    #for i in range(len(atm2bas_f)):
-    #    if len(atm2bas_f[i])<num1:
-    #        atm2bas_f[i] = atm2bas_f[i] + [0]*(num1-len(atm2bas_f[i]))
-    #singleitem = len(atm2bas_f)
 
     atm_ = eda.mol._atm.T
     atml = np.shape(eda.mol._atm)[0]
@@ -57,15 +47,17 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     #ek1 = np.array(ek1)
     #ek2 = np.array(ek2)
     ejk3 = np.array(e3)
+    ejk3 = simp3(ejk3, eda.nfrag)
     ejk4 = np.array(e4)
+    ejk4 = simp4(ejk4, eda.nfrag)
     #ejk1 = ej1+ek1
     #ejk2 = np.triu(ej2+ek2)
     logger.log(eda.stdout_inter,"ejk1=",ejk1)
     logger.log(eda.stdout_inter,"ejk2=",ejk2)
-    #logger.mlog(eda.stdout_inter,"ejk3=",ejk3)
-    #logger.mlog(eda.stdout_inter,"ejk4=",ejk4)
+    logger.mlog(eda.stdout_inter,"ejk3=",ejk3)
+    logger.mlog(eda.stdout_inter,"ejk4=",ejk4)
     
-    interejksum = ejk1.sum() + ejk2.sum() + ejk3.sum() + ejk4.sum()
+    interejksum = ejk1.sum() + ejk2.sum() + sum(ejk3.values()) + sum(ejk4.values())
     logger.mlog(eda.stdout_inter,"interejksum=",interejksum)
     logger.mlog(eda.stdout_inter,"ejksum=",ejksum)
     #if eda.anal:
@@ -81,6 +73,27 @@ def get_atm2sub(natm, atomlist):
         for i in frag:
             atm2sub[i] = frag_num
     return atm2sub
+
+def simp3(e3, nfrag):
+    e3simp = {}
+    for f in range(nfrag+2):
+        for g in range(f+1,nfrag+2):
+            for h in range(g+1, nfrag+2):
+                fgh = "%d,%d,%d"%(f,g,h)
+                if abs(e3[f,g,h]) > 1e-12:
+                    e3simp[fgh] = e3[f,g,h]
+    return e3simp
+
+def simp4(e4, nfrag):
+    e4simp = {}
+    for f in range(nfrag+2):
+        for g in range(f+1,nfrag+2):
+            for h in range(g+1, nfrag+2):
+                for i in range(h+1, nfrag+2):
+                    fghi = "%d,%d,%d,%d"%(f,g,h,i)
+                    if abs(e4[f,g,h,i]) > 1e-12:
+                        e4simp[fghi] = e4[f,g,h,i]
+    return e4simp
 
 def get_RR_inter(e1, e2):
     natm = e1.shape[0]

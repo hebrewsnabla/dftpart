@@ -1,0 +1,33 @@
+#================================================
+# Generalized Energy Based Fragmentation Program
+#================================================
+ Required References:
+ [1].S. Li, W. Li, Y. Jiang, J. Ma, T. Fang, W. Hua, S. Hua, H. Dong, D. Zhao, K. Liao, W. Zou, Z. Ni, Y. Wang, X. Shen and B. Hong, LSQC Program, Version 2.4, Nanjing University, Nanjing, 2019.
+ [2]. W. Li, S. Li, and Y. Jiang,J. Phys. Chem. A 111, 2193 (2007).
+ [3]. W. Hua, T. Fang, W. Li, J.-G. Yu, and S. Li,J. Phys. Chem. A 112, 10864 (2008).
+ [4]. S. Hua, W. Hua, and S. Li,J. Phys. Chem. A 114, 8126 (2010).
+ [5]. S. Li, W. Li, and J. Ma, Acc. Chem. Res. 47, 2712 (2014).
+ [6]. W. Li, C. Chen, D. Zhao, and S. Li, Int. J. Quantum Chem., 115, 641 (2015).
+--------------------------------------------------
+ Begin time: Mon Mar 23 14:18:56 2020
+ Directory: liwei01@node09:/home/liwei01/wsr/dftpart/test_2body/c8h18 (Linux)
+ Python version: 3.6.4
+ Read parameters from .keys file: c8h18.keys
+ Read geometry from .xyz file: c8h18.xyz
+#summary
+ --------------------------------------
+ subsystem   number atoms   basis funcs
+    1              20            154
+    2              20            154
+    3              14            106
+ --------------------------------------
+ total             26            202
+ --------------------------------------
+The largest subsystem is No.1 with 154 basis functions.
+Warning: Too large subsystem! This system with these parameters is not suitable for GEBF approach! 
+ GEBF(3.0)-RHF/6-31g** energy:
+ RHF =     -313.455875 
+ Dipole Moment (field-independent basis, Debye):
+    X=      0.0000    Y=      0.0000    Z=      0.0000  Tot=      0.0000
+ End time: Mon Mar 23 14:19:05 2020
+ Real time: 0:00:09.512301
