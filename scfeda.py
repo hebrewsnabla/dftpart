@@ -419,7 +419,7 @@ def get_E1(eda):
     #atom_h1E = np.zeros(atom_number)
     if eda.showinter:
         #print(atm2frg,mol.natm)
-        print(int1enuc[0][:3,:3])
+        #print(int1enuc[0][:3,:3])
         atom_1enuc, e1_1, e1_2, e1_3 = h1e_inter(eda.dm,bas2atm, bas2frg, atm2frg, int1enuc,mol.natm,nao,eda.totnum_frag+2)
         atom_1enuc = np.asarray(atom_1enuc)[0:mol.natm]
         logger.log(eda.stdout, "e1n_1", e1_1)
@@ -442,8 +442,8 @@ def get_E1(eda):
         logger.log(eda.stdout_inter,"e1_2",e1_2)
         #logger.mlog(eda.stdout_inter,"e1_3 ",e1_3)
     #with open(eda.output+'-eda.log','a') as f:
-    anal = True
-    if anal:
+    #anal = True
+    if eda.anal and eda.showinter:
         tot_akin = atom_kin.sum()
         tot_kin = np.einsum('ij,ji',eda.dm,mol.intor_symmetric('int1e_kin'))
         tot_fkin = kin1.sum() + np.triu(kin2).sum()
@@ -506,17 +506,18 @@ def get_Enuc(eda):
                         enuc2[f.label-1, g.label-1] = tem
         logger.log(eda.stdout_inter,"enucnuc_1",enuc1)
         logger.log(eda.stdout_inter,"enucnuc_2",enuc2)
-        tenuc = np.einsum('i,ij,j', charges, 1./rr, charges) * .5 
-        #aenuc = atm_enucnuc.sum()
-        fenuc = enuc1.sum() + enuc2.sum()
-        logger.slog(eda.stdout_inter, "tenuc: %f", tenuc)
-        #logger.slog(eda.stdout_inter, "aenuc: %f", aenuc)
-        logger.slog(eda.stdout_inter, "fenuc: %f", fenuc)
+        if eda.anal:
+            tenuc = np.einsum('i,ij,j', charges, 1./rr, charges) * .5 
+            #aenuc = atm_enucnuc.sum()
+            fenuc = enuc1.sum() + enuc2.sum()
+            logger.slog(eda.stdout, "tenuc: %f", tenuc)
+            #logger.slog(eda.stdout_inter, "aenuc: %f", aenuc)
+            logger.slog(eda.stdout, "fenuc: %f", fenuc)
 
-    if eda.anal:
-        tot_enucnuc = atm_enucnuc.sum()
-        enucnuc_err = tot_enucnuc - np.einsum('i,ij,j', charges, 1./rr, charges) * .5
-        logger.mlog(eda.stdout, "err_enucnuc", enucnuc_err)
+            aenuc = atm_enucnuc.sum()
+            logger.slog(eda.stdout, "aenuc: %f", aenuc)
+            enucnuc_err = aenuc - tenuc
+            logger.mlog(eda.stdout, "Err_aenuc", enucnuc_err)
     atm_enucnuc = atm_enucnuc, enuc1, enuc2
     return atm_enucnuc
 
