@@ -122,9 +122,9 @@ class EDA():
             atm_E = atm_e1 + atm_enuc + atm_ej + atm_exc
         if 'charge' in self.method:
             if self.showinter:
-                bg_corrxn, bg_corrxn_fake, bg2,bg3 = get_bg_corrxn(self, 'charge')
+                bg_corrxn, bg_corrxn_fake, bg2,bg3, bgbg2 = get_bg_corrxn(self, 'charge')
                 #RC_inter = eda_inter.get_RC_inter(bg1,bg2)
-                logger.log(self.stdout_inter, "bg2",bg2)
+                #logger.log(self.stdout_inter, "bg2",bg2)
                 #logger.mlog(self.stdout_inter, "bg3",bg3)
             else:
                 bg_corrxn, bg_corrxn_fake = get_bg_corrxn(self, 'charge')
@@ -333,28 +333,45 @@ def get_bg_corrxn(eda, charge='charge'):
     bg_corrxn = np.zeros(mol.natm)
     if eda.showinter:
         #bg1 = np.zeros(mol.natm)
-        bg2 = np.zeros((mol.natm, mol.natm))
-        bg3 = 0.0 #np.zeros((mol.natm, mol.natm, mol.natm))
+        #bg2 = np.zeros((mol.natm, mol.natm))
+        #bg3 = np.zeros((mol.natm, mol.natm, mol.natm))
+        bg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
+        bg3 = np.zeros((eda.nfrag+2, eda.nfrag+2, eda.nfrag+2))
+        bgbg2 = 0.0
     vchg = bg.inter_elecbg(mol, dm, bgcoords, bgchgs)
     #bas2atm = get_bas2atm(atm2bas,nao,mol.natm)
     if charge=='charge':
-        atom_elecbg = 2*np.asarray(bgh1e(dm,bas2atm,vchg,mol.natm,nao))[0:mol.natm]
+        elecbg = bgh1e(dm,bas2atm,vchg,mol.natm,nao)
+        atom_elecbg = 2*np.asarray(elecbg)[0:mol.natm]
         atom_elecbg -= 0.5*bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
-    elif charge=='qmmm':
-        atom_elecbg = np.asarray(bgh1e(dm,bas2atm,vchg,mol.natm,nao))[0:mol.natm]
-    logger.log(eda.stdout,"atom_elecbg=",atom_elecbg)
-
-    if charge=='charge':
         atom_nucbg = bg.inter_nucbg(mol, bgcoords, bgchgs)
+        if False:
+            for f in eda.frag_list:
+                if f.label=='b':
+                    pass
+            elecbg, bg2, bg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.totnum_frag+2)
+            bgbg, bgbg2 = bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
+            atom_elecbg_f = 2*np.asarray(elecbg)[0:mol.natm] - 0.5*bgbg
+            bg3 = eda_inter.simp3(bg3)
+            logger.mlog(eda.stdout_inter, "elecbg_a", atom_elecbg.sum())
+            logger.mlog(eda.stdout_inter, "elecbg_f", atom_elecbg_f.sum())
+            logger.mlog(eda.stdout_inter, "bg2", bg2)
+            logger.mlog(eda.stdout_inter, "bg3", bg3)
+            logger.mlog(eda.stdout_inter, "bgbg2", bgbg2)
+
     elif charge=='qmmm':
+        elecbg = bgh1e(dm,bas2atm,vchg,mol.natm,nao)
+        atom_elecbg = np.asarray(elecbg)[0:mol.natm]
         atom_nucbg = 0.5*bg.inter_nucbg(mol, bgcoords, bgchgs)
+    
+    logger.log(eda.stdout,"atom_elecbg=",atom_elecbg)
     logger.log(eda.stdout,"atom_nucbg=",atom_nucbg)
 
     bg_corrxn = atom_elecbg + atom_nucbg
     logger.log(eda.stdout,"atom_bg_correction=",bg_corrxn)
-    bg_corrxn_fake = 2*np.asarray(bgh1e(dm,bas2atm,vchg,mol.natm,nao))[0:mol.natm] + bg.inter_nucbg(mol, bgcoords, bgchgs)
+    bg_corrxn_fake = 2*np.asarray(elecbg)[0:mol.natm] + bg.inter_nucbg(mol, bgcoords, bgchgs)
     if eda.showinter:
-        return bg_corrxn, bg_corrxn_fake, bg2 , bg3
+        return bg_corrxn, bg_corrxn_fake, bg2 , bg3, bgbg2
     else:
         return bg_corrxn, bg_corrxn_fake
 

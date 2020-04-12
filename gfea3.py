@@ -57,6 +57,7 @@ class GFEA():
         self.dm0 = 'pyscf'
         self.built = False
         self.showinter = False
+        self.do_deriv = False
         #self.Gau_version = 'G16'
         #self.fchklist = None
     def build(self):
@@ -92,7 +93,12 @@ class GFEA():
         elif self.inputstyle == 'frg':
             #frg, lso, axyz, gjfname = self.frg, self.lso, self.axyz, self.gjfname
             #num_subsys = get_num_subsys(lso)
-            self.subsys_lso, self.num_subsys, self.frg_intot = lso_parser(self.lso)
+            self.subsys_lso, self.num_subsys_prm, self.num_subsys_tot, self.frg_intot = lso_parser(self.lso)
+            #print(self.subsys_lso)
+            if self.do_deriv:
+                self.num_subsys = self.num_subsys_tot
+            else:
+                self.num_subsys = self.num_subsys_prm
             self.gjflist, fchklist, gmslist = get_subgjf(self.gjfname, self.num_subsys)
             logger.mlog(self.stdout, "atoms in frg (tot order)\n", self.frg_intot)
             logger.mlog(self.stdout, "subsys", self.subsys_lso)
@@ -166,10 +172,17 @@ class GFEA():
                 logger.mlog(self.stdout, "_env", _env)
                 #frag_list = get_frags(self.frg_intot, _cen, _env)
                 #for label in subsys_i:
-                cen_intot, cen_insub, frag_list, molchgs = get_frags(self, lab[i], lac[i], _cen, _env)
-                logger.mlog(self.stdout, "atomlist_lab", lab[i])
-                logger.mlog(self.stdout, "cen_intot", cen_intot)
-                logger.mlog(self.stdout, "cen_insub", cen_insub)
+                try:
+                    lab_i = lab[i]
+                except:
+                    lab_i = [0]*len(lac[i])
+                cen_intot, cen_insub, frag_list, molchgs = get_frags(self, lab_i, lac[i], _cen, _env)
+                try:
+                    logger.mlog(self.stdout, "atomlist_lab", lab[i])
+                    logger.mlog(self.stdout, "cen_intot", cen_intot)
+                    logger.mlog(self.stdout, "cen_insub", cen_insub)
+                except:
+                    pass
                 if 'charge' in self.method:
                     logger.log(self.stdout, "molchgs", molchgs)
                 logger.slog(self.stdout, "----------------------------------------------------------")
@@ -196,6 +209,8 @@ class GFEA():
                 if conv==False:
                     logger.slog(self.stdout, "Error: EDA not converged")
                 logger.slog(self.stdout, "center atom energies:")
+                if i > (self.num_subsys_prm-1):
+                    continue # skip deriv subsys
                 for i in range(len(cen_intot)):
                     self.atom_E[cen_intot[i]-1] = subatm_E[cen_insub[i]-1]
                     logger.slog(self.stdout, "%d %.10f", cen_intot[i], self.atom_E[cen_intot[i]-1])
@@ -238,17 +253,21 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
         f.label = envfrg
         f.layer = 'e'
         frags_list.append(f)
-    maxfrag = max([max(_cen),max(_env)])
+    if len(_cen) > 0:
+        maxfrag = max([max(_cen),max(_env)])
+    else:
+        maxfrag = max(_env)
 
-    for label in atomlist_lac:
-        caplabel = maxfrag
+    caplabel = maxfrag
+    for l in range(len(atomlist_lac)):
+        label = atomlist_lac[l]
         if label==0:
             capf = Frag()
             capf.layer = 'cap'
             capf.label = caplabel + 1
             caplabel += 1
             capf.atm_intot = [-1]
-            capf.atm_insub = [atomlist_lac.index(label)+1]
+            capf.atm_insub = [l+1]
             frags_list.append(capf)
 
     molchgs = np.zeros(len(atomlist_lab))
@@ -258,9 +277,9 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
             cen_insub.append(atomlist_lab.index(label)+1)
             if 'charge' in gfea.method:
                 molchgs[atomlist_lab.index(label)] = gfea.chglist[label-1]
-        else:
-            if 'charge' in gfea.method:
-                molchgs[atomlist_lab.index(label)] = 0.0
+        #else:
+        #    if 'charge' in gfea.method:
+        #        molchgs[atomlist_lab.index(label)] = 0.0
     for f in frags_list:
         if f.layer is not 'cap':
             #f.selfchg = np.zeros(len(f.atm_intot))
@@ -426,22 +445,35 @@ def lso_parser(lso, style='by_sub'):
     with open(lso, 'r') as f:
         lines = f.readlines()
     subsys_table = []
+    subsys_table_deriv = []
     frg_table = []
+
     read = False
     for line in lines:
         if '#final capped fragments' in line:
             read = True
             continue
-        if read is True:
+        if read:
             subsys_table.append(line)
         if 'Num of capped fragments:' in line:
             break
+    
+    read = False
+    for line in lines:
+        if 'Deriv' in line:
+            read = True
+            continue
+        if read:
+            subsys_table_deriv.append(line)
+            if '===' in line:
+                break
+    
     read = False
     for line in lines:
         if '#fragment atoms' in line:
             read = True
             continue
-        if read is True:
+        if read:
             frg_table.append(line)
             if '#end' in line:
                 break
@@ -455,7 +487,6 @@ def lso_parser(lso, style='by_sub'):
         env = line[1].strip()
         cen_list = comma_parser(cen)
         env_list = comma_parser(env)
-
         if style == 'by_sub':
             subsys_lso.append([cen_list, env_list])
         elif style == 'by_cen':
@@ -465,6 +496,20 @@ def lso_parser(lso, style='by_sub'):
                 real_env = env_list + cen_rest
                 real_env.sort()
                 subsys_lso.append([[i], real_env])
+    for line in subsys_table_deriv[:-1]:
+        line = line.split()
+        #cen = line[0].strip()
+        env = line[4].strip()
+        cen_list = []
+        env_list = comma_parser(env)
+        #if style == 'by_sub':
+        subsys_lso.append([cen_list, env_list])
+        #elif style == 'by_cen':
+        #    for i in cen_list:
+        #        cen_rest = [item for item in cen_list if item is not i]
+        #        real_env = env_list + cen_rest
+        #        real_env.sort()
+        #        subsys_lso.append([[i], real_env])
 
     #frg_data = frg_table[3:-2]
     #print(frg_table)
@@ -479,9 +524,12 @@ def lso_parser(lso, style='by_sub'):
 
     line = subprocess.getstatusoutput("grep 'Num of capped fragments' " + lso)
     #logger.log(f,line[1].split())
-    num_subsys = int(line[1].split()[-1].strip())
+    num_subsys_prm = int(line[1].split()[-1].strip())
+    line2 = subprocess.getstatusoutput("grep 'Number of subsystems:' " + lso)
+    num_subsys_tot = int(line2[1].split()[-1].strip())
+    
 
-    return subsys_lso, num_subsys, frg_intot
+    return subsys_lso, num_subsys_prm, num_subsys_tot, frg_intot
 
 def comma_parser(exprs):
     if isinstance(exprs, list):
