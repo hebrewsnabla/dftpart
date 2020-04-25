@@ -24,38 +24,39 @@ import labc
 
 class GFEA():
     def __init__(self):
-
-        self.inputstyle = 'frg'
+        # general settings
         self.verbose = 4
         self.max_memory = 4000
         self.output = "test"
         self.stdout = None
-        #self.stdout = sys.stdout
-        #self.stdout = mol.stdout
-        self.E_GFEA = 0
-        self.atom_E = None
-
+        # GFEA input (frg style)
+        self.inputstyle = 'frg'
+        self.method = []
         self.gjfname = None
-        self.gjf = None
-        ## atomlist style ##
-        self.subsys = None
+        self.gjf = None # auto detect
+        self.frg = None # auto detect
+        self.lso = None # auto detect
+        self.cha = None # auto detect
+        self.labc = None # auto detect
+        #self.axyz = None
+        self.dm0 = 'pyscf' 
+        ## atomlist style (deprecated) ##
+        #self.subsys = None
         self.atomlist_tot = None
         self.spinlist_tot = None
         self.chglist_tot = None
-        self.gjflist = None  # optional
-        self.fchklist = None  # optional
-        self.gmslist = None  #
-        ################
-        ## frg style ##
-        self.frg = None
-        self.lso = None
-        self.axyz = None
-        ###############
 
+        # GFEA variables
+        self.E_GFEA = 0
+        self.atom_E = None
         self.totmol = None
         self.method = None
-        self.dm0 = 'pyscf'
         self.built = False
+        self.subsys = None
+        self.gjflist = None  
+        #self.fchklist = None  
+        #self.gmslist = None  #
+        # GFEA settings
         self.showinter = False
         self.do_deriv = False
         self.exclude_cap = False
@@ -166,11 +167,13 @@ class GFEA():
                 #atomlist = []
                 _cen = self.subsys_lso[i][0]
                 _env = self.subsys_lso[i][1]
+                _bg = get_bglabel(self.num_frag, _cen, _env)
                 subsys_i = _cen + _env
                 subsys_i.sort()
                 logger.mlog(self.stdout, "subsys_i", subsys_i)
                 logger.mlog(self.stdout, "_cen", _cen)
                 logger.mlog(self.stdout, "_env", _env)
+                logger.mlog(self.stdout, "_bg", _bg)
                 #frag_list = get_frags(self.frg_intot, _cen, _env)
                 #for label in subsys_i:
                 try:
@@ -203,6 +206,7 @@ class GFEA():
                 subeda.output = subeda.gjf[:-4]
                 subeda.verbose = self.verbose
                 subeda.showinter = self.showinter
+                subeda.exclude_cap = self.exclude_cap
                 subeda.frag_list = frag_list
                 subeda.totnum_frag = self.num_frag
                 subatm_E, subE, conv, intert = subeda.kernel()
@@ -254,6 +258,7 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
         f.label = envfrg
         f.layer = 'e'
         frags_list.append(f)
+    
     if len(_cen) > 0:
         maxfrag = max([max(_cen),max(_env)])
     else:
@@ -289,6 +294,17 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
                 if 'charge' in gfea.method:
                     f.selfchg.append(gfea.chglist[label-1])
     return cen_intot, cen_insub, frags_list, molchgs
+
+def get_bglabel(num_frag, _cen, _env):
+    _bg = []
+    for i in range(1,num_frag+1):
+        if i in _cen:
+            continue
+        if i in _env:
+            continue
+        _bg.append(i)
+    _bg.sort()
+    return _bg
 
 def one2zero(alist):
     if isinstance(alist, list):

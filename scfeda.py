@@ -248,9 +248,16 @@ def build(eda, gjf, method):
     eda.atm2frg = get_atm2frg(mol.natm, eda.frag_list)
     eda.nfrag = len(eda.frag_list)
     eda.ncap = 0
+    eda.capatoms = []
     for f in eda.frag_list:
-        if f.layer == 'cap': eda.ncap += 1
-
+        if f.layer == 'cap': 
+            eda.ncap += 1
+            eda.capatoms.append(f.atm_insub[0])
+    eda.capbas_p = []
+    eda.capbas_f = []
+    for i in eda.capatoms:
+        eda.capbas_p.append(atm2bas_p[i-1])
+        eda.capbas_f.append(atm2bas_f[i-1])
     if eda.verbose >= 6:
         logger.mlog(eda.stdout, "atm2bas_f", eda.atm2bas_f)
         logger.mlog(eda.stdout, "atm2bas_p", eda.atm2bas_p)
@@ -258,7 +265,9 @@ def build(eda, gjf, method):
         logger.mlog(eda.stdout, "bas2atm", eda.bas2atm)
         logger.mlog(eda.stdout, "bas2frg", eda.bas2frg)
         logger.mlog(eda.stdout, "atm2frg", eda.atm2frg)
-    
+        logger.mlog(eda.stdout, "cap atoms", eda.capatoms)
+        logger.mlog(eda.stdout, "cap basis_p", eda.capbas_p)
+      
     eda.built = True
     return eda
 
@@ -392,8 +401,11 @@ def get_E1(eda):
         #kin2 = np.zeros((mol.natm, mol.natm))
         kin1 = np.zeros(eda.totnum_frag + 2)
         kin2 = np.zeros((eda.totnum_frag + 2, eda.totnum_frag +2))
-    for i in range(nao):
-        for j in range(nao):
+    naorange = range(nao)
+    if eda.exclude_cap:
+        naorange -= eda.capbas_p
+    for i in naorange:
+        for j in naorange:
             #print(dm,kin)
             kin = eda.dm[i,j] * kinmat[i,j]
             a = bas2atm[i]
@@ -417,6 +429,8 @@ def get_E1(eda):
 
     fakeatm = []
     for n in range(mol.natm):
+        if eda.exclude_cap and (n+1 in eda.capatoms):
+            continue
         back = copy.copy(mol._atm)
         for i in range(mol.natm):
             if (i!=n):
@@ -427,6 +441,9 @@ def get_E1(eda):
     #print(fakeatm)
     int1enuc = []
     for i in range(mol.natm):
+        if eda.exclude_cap and (n+1 in eda.capatoms):
+            int1en = 
+            continue
         if mol.cart:
             int1en = moleintor.getints("int1e_nuc_cart",fakeatm[i],mol._bas, mol._env)
         else:
