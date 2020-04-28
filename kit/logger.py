@@ -24,18 +24,19 @@ def mlog(out, txt, *args, sep=" ", endl=True):
     out.write(s)
     out.flush()
 
-def log(out, txt, obj, label=None, ncol=10, digits=8):
+def log(out, txt, obj, label=None, ncol=10, digits=8, newl=True):
     if isinstance(obj, list):
         mat = np.array(obj)
         dump_mat(out, txt, mat, label, ncol, digits)
     elif isinstance(obj, np.ndarray):
-        dump_mat(out, txt, obj, label, ncol, digits)
+        dump_mat(out, txt, obj, label, ncol, digits, newl)
     else:
         out.write("obj type must be list or np.ndarray.\n")
     out.flush()
 
-def dump_1darray(out, txt, mat, label=None, ncol=10, digits=10):
-    out.write(txt + '\n')
+def dump_1darray(out, txt, mat, label=None, ncol=10, digits=10, newl=True):
+    if newl:
+        out.write(txt + '\n')
     if label is 'n':
         label = ['#%d'%i for i in range(0,ncol)]
         out.write('%s\n' % ' '.join(label))
@@ -50,9 +51,9 @@ def dump_1darray(out, txt, mat, label=None, ncol=10, digits=10):
 # use pyscf.tools.dump_mat.dump_rec(out, mat, label, label2, ncol, digits, start)
 
 
-def dump_mat(out, txt, mat, label=None, ncol=10, digits=10):
+def dump_mat(out, txt, mat, label=None, ncol=10, digits=10, newl=True):
     if len(mat.shape) == 1:
-        dump_1darray(out, txt, mat, label, ncol, digits)
+        dump_1darray(out, txt, mat, label, ncol, digits, newl)
     elif len(mat.shape) == 2:
         if label is None:
             out.write(txt +'\n')

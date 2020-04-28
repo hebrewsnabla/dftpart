@@ -256,8 +256,8 @@ def build(eda, gjf, method):
     eda.capbas_p = []
     eda.capbas_f = []
     for i in eda.capatoms:
-        eda.capbas_p.append(atm2bas_p[i-1])
-        eda.capbas_f.append(atm2bas_f[i-1])
+        eda.capbas_p.append(eda.atm2bas_p[i-1])
+        eda.capbas_f.append(eda.atm2bas_f[i-1])
     if eda.verbose >= 6:
         logger.mlog(eda.stdout, "atm2bas_f", eda.atm2bas_f)
         logger.mlog(eda.stdout, "atm2bas_p", eda.atm2bas_p)
@@ -275,6 +275,8 @@ def get_atm2frg(natm, frag_list):
     atm2frg = []
     for a in range(natm):
         for f in frag_list:
+            if f.layer == 'b':
+                continue
             if (a+1 in f.atm_insub):
                 atm2frg.append(f.label)
     return atm2frg
@@ -283,6 +285,8 @@ def get_bas2frg(bas2atm, frag_list):
     bas2frg = []
     for atm in bas2atm:
         for f in frag_list:
+            if f.layer == 'b': 
+                continue
             if (atm+1 in f.atm_insub):
                 bas2frg.append(f.label)
     return bas2frg
@@ -354,11 +358,12 @@ def get_bg_corrxn(eda, charge='charge'):
         atom_elecbg = 2*np.asarray(elecbg)[0:mol.natm]
         atom_elecbg -= 0.5*bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
         atom_nucbg = bg.inter_nucbg(mol, bgcoords, bgchgs)
-        if False:
+        if eda.showinter:
             for f in eda.frag_list:
-                if f.label=='b':
-                    pass
-            elecbg, bg2, bg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.totnum_frag+2)
+                if f.layer=='b':
+                    chg_insub = misc.one2zero(f.atm_insub)
+                    vchg_frag = bg.inter_elecbg(mol, dm, bgcoords[chg_insub], bgchgs[chg_insub])
+            elecbg, bg2, bg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.nfrag+2)
             bgbg, bgbg2 = bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
             atom_elecbg_f = 2*np.asarray(elecbg)[0:mol.natm] - 0.5*bgbg
             bg3 = eda_inter.simp3(bg3)
@@ -399,8 +404,8 @@ def get_E1(eda):
     if eda.showinter:
         #kin1 = np.zeros(mol.natm)
         #kin2 = np.zeros((mol.natm, mol.natm))
-        kin1 = np.zeros(eda.totnum_frag + 2)
-        kin2 = np.zeros((eda.totnum_frag + 2, eda.totnum_frag +2))
+        kin1 = np.zeros(eda.nfrag + 2)
+        kin2 = np.zeros((eda.nfrag + 2, eda.nfrag +2))
     naorange = range(nao)
     if eda.exclude_cap:
         naorange -= eda.capbas_p
@@ -442,7 +447,7 @@ def get_E1(eda):
     int1enuc = []
     for i in range(mol.natm):
         if eda.exclude_cap and (n+1 in eda.capatoms):
-            int1en = 
+            #int1en = 
             continue
         if mol.cart:
             int1en = moleintor.getints("int1e_nuc_cart",fakeatm[i],mol._bas, mol._env)
@@ -454,7 +459,7 @@ def get_E1(eda):
     if eda.showinter:
         #print(atm2frg,mol.natm)
         #print(int1enuc[0][:3,:3])
-        atom_1enuc, e1_1, e1_2, e1_3 = h1e_inter(eda.dm,bas2atm, bas2frg, atm2frg, int1enuc,mol.natm,nao,eda.totnum_frag+2)
+        atom_1enuc, e1_1, e1_2, e1_3 = h1e_inter(eda.dm,bas2atm, bas2frg, atm2frg, int1enuc,mol.natm,nao,eda.nfrag+2)
         atom_1enuc = np.asarray(atom_1enuc)[0:mol.natm]
         logger.log(eda.stdout, "e1n_1", e1_1)
         e1_1 = np.asarray(e1_1) + kin1
@@ -507,8 +512,8 @@ def get_Enuc(eda):
     mol = eda.mol
     charges = mol.atom_charges()
     if True: #eda.showinter:
-        enuc1 = np.zeros(eda.totnum_frag+2)
-        enuc2 = np.zeros((eda.totnum_frag+2, eda.totnum_frag+2))
+        enuc1 = np.zeros(eda.nfrag+2)
+        enuc2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
     #coords = mol.atom_coords()
     rr = inter_distance(mol)
     #print(rr)
@@ -521,7 +526,9 @@ def get_Enuc(eda):
     logger.log(eda.stdout,"atom_enucnuc=",atm_enucnuc)
     if eda.showinter:
         for f in eda.frag_list:
+            if f.layer == 'b': continue
             for g in eda.frag_list:
+                if g.layer == 'b': continue
                 if g.label < f.label:
                     continue
                 else:

@@ -35,7 +35,7 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     logger.slog(eda.stdout,"nbas=%d",nbas)  # num of shells
 
     atom_ejk, e1, e2, e3, e4 = preri(atm_,atml,bas_,basl,env_,envl, eda.cart, nao,nbas, dm, 
-        eda.bas2atm_f, eda.bas2frg, mol.natm, eda.totnum_frag)
+        eda.bas2atm_f, eda.bas2frg, mol.natm, eda.nfrag)
     #atom_ejk = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
     #atom_energy = np.array(atom_energy)
     #print(atom_ejk)

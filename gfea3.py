@@ -38,7 +38,7 @@ class GFEA():
         self.lso = None # auto detect
         self.cha = None # auto detect
         self.labc = None # auto detect
-        #self.axyz = None
+        self.axyz = None
         self.dm0 = 'pyscf' 
         ## atomlist style (deprecated) ##
         #self.subsys = None
@@ -95,7 +95,7 @@ class GFEA():
         elif self.inputstyle == 'frg':
             #frg, lso, axyz, gjfname = self.frg, self.lso, self.axyz, self.gjfname
             #num_subsys = get_num_subsys(lso)
-            self.subsys_lso, self.num_subsys_prm, self.num_subsys_tot, self.frg_intot = lso_parser(self.lso)
+            self.subsys_lso, self.num_subsys_prm, self.num_subsys_tot, self.frg_intot, self.num_atoms = lso_parser(self.lso)
             #print(self.subsys_lso)
             if self.do_deriv:
                 self.num_subsys = self.num_subsys_tot
@@ -180,7 +180,7 @@ class GFEA():
                     lab_i = lab[i]
                 except:
                     lab_i = [0]*len(lac[i])
-                cen_intot, cen_insub, frag_list, molchgs = get_frags(self, lab_i, lac[i], _cen, _env)
+                cen_intot, cen_insub, frag_list, molchgs = get_frags(self, lab_i, lac[i], _cen, _env, _bg)
                 try:
                     logger.mlog(self.stdout, "atomlist_lab", lab[i])
                     logger.mlog(self.stdout, "cen_intot", cen_intot)
@@ -195,7 +195,7 @@ class GFEA():
                     logger.slog(self.stdout, "%d      %s     "%(f.label, f.layer), endl=False)
                     logger.mlog(self.stdout, "", f.atm_intot, endl=False)
                     logger.mlog(self.stdout, "         ", f.atm_insub, endl=False)
-                    logger.log(self.stdout, "        ", f.selfchg)
+                    logger.log(self.stdout, "        ", f.selfchg, digits=4, newl=False)
                 logger.slog(self.stdout, "----------------------------------------------------------")
 
                 subeda = scfeda.EDA()
@@ -238,7 +238,7 @@ class Frag():
         self.selfchg = []
 
 
-def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
+def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env, _bg):
     #atomlist_lab = lab[i]
     #atomlist_lac = lac[i]
     cen_intot = []
@@ -258,11 +258,18 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
         f.label = envfrg
         f.layer = 'e'
         frags_list.append(f)
+    for bgfrg in _bg:
+        f = Frag()
+        f.atm_intot = gfea.frg_intot[bgfrg-1]
+        f.label = bgfrg
+        f.layer = 'b'
+        frags_list.append(f)
     
-    if len(_cen) > 0:
-        maxfrag = max([max(_cen),max(_env)])
-    else:
-        maxfrag = max(_env)
+    #if len(_cen) > 0:
+    #    maxfrag = max([max(_cen),max(_env)])
+    #else:
+    #    maxfrag = max(_env)
+    maxfrag = gfea.num_frag
 
     caplabel = maxfrag
     for l in range(len(atomlist_lac)):
@@ -286,13 +293,24 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env):
         #else:
         #    if 'charge' in gfea.method:
         #        molchgs[atomlist_lab.index(label)] = 0.0
+    list_chg = get_listchg(gfea.num_atoms, atomlist_lac)
+    print(gfea.num_atoms)
+    print(atomlist_lac)
+    print(list_chg)
     for f in frags_list:
-        if f.layer is not 'cap':
+        if (f.layer == 'c') or (f.layer == 'e'):
             #f.selfchg = np.zeros(len(f.atm_intot))
             for label in f.atm_intot:
                 f.atm_insub.append(atomlist_lac.index(label)+1)
                 if 'charge' in gfea.method:
                     f.selfchg.append(gfea.chglist[label-1])
+        elif f.layer == 'b':
+            for label in f.atm_intot:
+                f.atm_insub.append(list_chg.index(label)+1)
+                if 'charge' in gfea.method:
+                    f.selfchg.append(gfea.chglist[label-1])
+
+
     return cen_intot, cen_insub, frags_list, molchgs
 
 def get_bglabel(num_frag, _cen, _env):
@@ -306,14 +324,13 @@ def get_bglabel(num_frag, _cen, _env):
     _bg.sort()
     return _bg
 
-def one2zero(alist):
-    if isinstance(alist, list):
-        blist = []
-        for item in alist:
-            blist.append(one2zero(item))
-    elif isinstance(alist, int):
-        blist = alist - 1
-    return blist
+def get_listchg(num_atoms, lac):
+    list_chg = []
+    for i in range(1,num_atoms+1):
+        if i not in lac:
+            list_chg.append(i)
+    return list_chg
+
 
 def cha_parser(cha):
     with open(cha,'r') as f:
@@ -544,9 +561,11 @@ def lso_parser(lso, style='by_sub'):
     num_subsys_prm = int(line[1].split()[-1].strip())
     line2 = subprocess.getstatusoutput("grep 'Number of subsystems:' " + lso)
     num_subsys_tot = int(line2[1].split()[-1].strip())
+    line3 = subprocess.getstatusoutput("grep 'Number of atoms:' " + lso)
+    num_atoms = int(line3[1].split()[-1].strip())
     
 
-    return subsys_lso, num_subsys_prm, num_subsys_tot, frg_intot
+    return subsys_lso, num_subsys_prm, num_subsys_tot, frg_intot, num_atoms
 
 def comma_parser(exprs):
     if isinstance(exprs, list):
