@@ -9,7 +9,7 @@ from pyscf.scf import _vhf
 
 # dftpart module
 from new_eda import preri
-from h1e_new import h1e, bgh1e, h1e_inter
+from h1e_new import h1e, bgh1e, h1e_inter, bgh1e_inter
 import xceda, jkeda, eda_inter
 import bg
 import eda_inter
@@ -37,6 +37,7 @@ class EDA():
         output : A string like 'test'. 2 output file will be generated:
                  test-pyscf.log : PySCF output info
                  test-eda.log   : eda info
+                 test-inter.log : eda inter energies (optional)
 
         built : whether build() is performed
         anal : check each part of SCF energy (J, K, nuc, etc.) equals the sum of their decomposition
@@ -336,9 +337,10 @@ def get_bg_corrxn(eda, charge='charge'):
     '''
     mol = eda.mol
     dm = eda.dm
-    nao = len(dm)
+    nao = eda.nao
     atm2bas = eda.atm2bas_f
     bas2atm = eda.bas2atm
+    bas2frg = eda.bas2frg
     molchgs = eda.molchgs
     bgcoords, bgchgs = eda.bgchgs
     #cen = eda.cen
@@ -349,8 +351,8 @@ def get_bg_corrxn(eda, charge='charge'):
         #bg2 = np.zeros((mol.natm, mol.natm))
         #bg3 = np.zeros((mol.natm, mol.natm, mol.natm))
         bg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
-        bg3 = np.zeros((eda.nfrag+2, eda.nfrag+2, eda.nfrag+2))
-        bgbg2 = 0.0
+        bg3 = {}
+        bgbg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
     vchg = bg.inter_elecbg(mol, dm, bgcoords, bgchgs)
     #bas2atm = get_bas2atm(atm2bas,nao,mol.natm)
     if charge=='charge':
@@ -360,18 +362,26 @@ def get_bg_corrxn(eda, charge='charge'):
         atom_nucbg = bg.inter_nucbg(mol, bgcoords, bgchgs)
         if eda.showinter:
             for f in eda.frag_list:
-                if f.layer=='b':
-                    chg_insub = misc.one2zero(f.atm_insub)
-                    vchg_frag = bg.inter_elecbg(mol, dm, bgcoords[chg_insub], bgchgs[chg_insub])
-            elecbg, bg2, bg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.nfrag+2)
-            bgbg, bgbg2 = bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
-            atom_elecbg_f = 2*np.asarray(elecbg)[0:mol.natm] - 0.5*bgbg
-            bg3 = eda_inter.simp3(bg3)
+                if f.layer is not 'b': 
+                    continue
+                chg_insub = misc.one2zero(f.atm_insub)
+                vchg_frag = bg.inter_elecbg(mol, dm, bgcoords[chg_insub], bgchgs[chg_insub])
+                felecbg, fbg2, fbg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.nfrag+2)
+                print(fbg2)
+                for g in range(eda.nfrag+2):
+                    bg2[g,f.label-1] += fbg2[g]
+                    for h in range(g+1,eda.nfrag+2):
+                        if abs(fbg3[g,h]) > 1e-12:
+                            ghf = "%s,%s,%s" %(g+1,h+1,f.label)
+                            bg3[ghf] = fbg3[g,h]
+            #bgbg, bgbg2 = bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
+            #atom_elecbg_f = 2*np.asarray(elecbg)[0:mol.natm] - 0.5*bgbg
+            #bg3 = eda_inter.simp3(bg3)
             logger.mlog(eda.stdout_inter, "elecbg_a", atom_elecbg.sum())
-            logger.mlog(eda.stdout_inter, "elecbg_f", atom_elecbg_f.sum())
-            logger.mlog(eda.stdout_inter, "bg2", bg2)
+            #logger.mlog(eda.stdout_inter, "elecbg_f", atom_elecbg_f.sum())
+            logger.log(eda.stdout_inter, "bg2", bg2)
             logger.mlog(eda.stdout_inter, "bg3", bg3)
-            logger.mlog(eda.stdout_inter, "bgbg2", bgbg2)
+            #logger.mlog(eda.stdout_inter, "bgbg2", bgbg2)
 
     elif charge=='qmmm':
         elecbg = bgh1e(dm,bas2atm,vchg,mol.natm,nao)
@@ -479,7 +489,7 @@ def get_E1(eda):
     if eda.showinter:
         logger.log(eda.stdout_inter,"e1_1",e1_1)
         logger.log(eda.stdout_inter,"e1_2",e1_2)
-        #logger.mlog(eda.stdout_inter,"e1_3 ",e1_3)
+        logger.mlog(eda.stdout_inter,"e1_3 ",e1_3)
     #with open(eda.output+'-eda.log','a') as f:
     #anal = True
     if eda.anal and eda.showinter:

@@ -79,7 +79,7 @@ def simp3(e3, nfrag):
     for f in range(nfrag+2):
         for g in range(f+1,nfrag+2):
             for h in range(g+1, nfrag+2):
-                fgh = "%d,%d,%d"%(f,g,h)
+                fgh = "%d,%d,%d"%(f+1,g+1,h+1)
                 if abs(e3[f,g,h]) > 1e-12:
                     e3simp[fgh] = e3[f,g,h]
     return e3simp
@@ -90,7 +90,7 @@ def simp4(e4, nfrag):
         for g in range(f+1,nfrag+2):
             for h in range(g+1, nfrag+2):
                 for i in range(h+1, nfrag+2):
-                    fghi = "%d,%d,%d,%d"%(f,g,h,i)
+                    fghi = "%d,%d,%d,%d"%(f+1,g+1,h+1,i+1)
                     if abs(e4[f,g,h,i]) > 1e-12:
                         e4simp[fghi] = e4[f,g,h,i]
     return e4simp
