@@ -64,6 +64,21 @@ def inter_nucbg(mol, coords, charges):
     #print("inter_nucbg: %f" % nuc)
     return nuc
 
+def inter_nucbg_f(mol, atm_insub, coords, charges, chg_insub):
+    #nuc = np.zeros(mol.natm)
+    nuc = 0.0
+    #print(coords)
+    for j in atm_insub:
+        q2, r2 = mol.atom_charge(j-1), mol.atom_coord(j-1)
+        for k in chg_insub:
+            #r = lib.norm(r2 - coords, axis=1)
+            #print(r2)
+            r = lib.norm(r2 - coords[k-1])
+            q1 = charges[k-1]
+            nuc += q2 * (q1 / r)
+    #print("inter_nucbg: %f" % nuc)
+    return nuc
+
 def inter_bgbg(coords1, charges1, coords2, charges2):
     E = np.zeros(len(charges1))
     chg1 = len(coords1)

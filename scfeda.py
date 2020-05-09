@@ -350,6 +350,8 @@ def get_bg_corrxn(eda, charge='charge'):
         #bg1 = np.zeros(mol.natm)
         #bg2 = np.zeros((mol.natm, mol.natm))
         #bg3 = np.zeros((mol.natm, mol.natm, mol.natm))
+        elecbg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
+        nucbg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
         bg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
         bg3 = {}
         bgbg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
@@ -366,19 +368,29 @@ def get_bg_corrxn(eda, charge='charge'):
                     continue
                 chg_insub = misc.one2zero(f.atm_insub)
                 vchg_frag = bg.inter_elecbg(mol, dm, bgcoords[chg_insub], bgchgs[chg_insub])
-                felecbg, fbg2, fbg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.nfrag+2)
-                print(fbg2)
-                for g in range(eda.nfrag+2):
-                    bg2[g,f.label-1] += fbg2[g]
-                    for h in range(g+1,eda.nfrag+2):
-                        if abs(fbg3[g,h]) > 1e-12:
-                            ghf = "%s,%s,%s" %(g+1,h+1,f.label)
-                            bg3[ghf] = fbg3[g,h]
+                felecbg_a, felecbg2, felecbg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.nfrag+2)
+                print(felecbg2)
+                for g in eda.frag_list:
+                    if g.layer is 'b': 
+                        continue
+                    elecbg2[g.label-1,f.label-1] = felecbg2[g.label-1]
+                    nucbg2[g.label-1,f.label-1] = bg.inter_nucbg_f(mol, g.atm_insub, bgcoords, bgchgs, f.atm_insub)
+                    for h in eda.frag_list:
+                        if (h.layer is 'b') or (h.label <= g.label):
+                            continue
+                        bg3gh = felecbg3[g.label-1,h.label-1]
+                        if abs(bg3gh) > 1e-12:
+                            ghf = "%s,%s,%s" %(g.label,h.label,f.label)
+                            bg3[ghf] = bg3gh
+            bg2 = elecbg2 + nucbg2
             #bgbg, bgbg2 = bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
             #atom_elecbg_f = 2*np.asarray(elecbg)[0:mol.natm] - 0.5*bgbg
             #bg3 = eda_inter.simp3(bg3)
-            logger.mlog(eda.stdout_inter, "elecbg_a", atom_elecbg.sum())
+            #logger.mlog(eda.stdout_inter, "elecbg_a", atom_elecbg.sum())
             #logger.mlog(eda.stdout_inter, "elecbg_f", atom_elecbg_f.sum())
+            if eda.verbose>4:
+                logger.log(eda.stdout_inter, "elecbg2", elecbg2)
+                logger.log(eda.stdout_inter, "nucbg2", nucbg2)
             logger.log(eda.stdout_inter, "bg2", bg2)
             logger.mlog(eda.stdout_inter, "bg3", bg3)
             #logger.mlog(eda.stdout_inter, "bgbg2", bgbg2)
