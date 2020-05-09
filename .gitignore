@@ -3,7 +3,7 @@
 *.pyc
 tmp*
 mp_example/
-test_2body/
+test_2body/*
 !test_2body/c8/
 !test_2body/c8b/
 !test_2body/w19/
