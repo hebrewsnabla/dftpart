@@ -161,6 +161,7 @@ class GFEA():
             lac = labc.labc_parser(self.labc, "lac")
             if ('charge' in self.method) or ('qmmm' in self.method):
                 self.chglist = cha_parser(self.cha)
+            all_intert = []
             for i in range(self.num_subsys):
                 logger.slog(self.stdout, "## Do EDA on subsys %d ############", i+1)
 
@@ -210,6 +211,7 @@ class GFEA():
                 subeda.frag_list = frag_list
                 subeda.totnum_frag = self.num_frag
                 subatm_E, subE, conv, intert = subeda.kernel()
+                all_intert.append(intert)
                 #logger.log(self.stdout, "subatm_E", subatm_E)
                 if conv==False:
                     logger.slog(self.stdout, "Error: EDA not converged")
@@ -223,11 +225,18 @@ class GFEA():
                 
         self.E_GFEA = self.atom_E.sum()
         logger.log(self.stdout, "atom_E", self.atom_E)
-        logger.slog(self.stdout, "E_GFEA = %.10f", self.E_GFEA)
-        #if self.showinter:
-            
+        logger.slog(self.stdout, "E_GFEA (atom) = %.10f", self.E_GFEA)
+        if self.showinter:
+            tot_inter1, tot_inter2, tot_inter3, tot_inter4 = alloc_inter(all_intert)    
 
         return self.E_GFEA, self.atom_E
+
+def alloc_inter(intert_list):
+    inter1 = np.zeros()
+    inter2 = np.zeros()
+    inter3 = {}
+    inter4 = {}
+
 
 class Frag():
     def __init__(self):
@@ -406,10 +415,6 @@ def fchk2dm(gjflist,
             submf = scf.RHF(submol)
         elif is_dft(method[0]):
             submf = dft.RKS(submol)
-            submf.xc = method[0]
-            submf.grids.atom_grid = (99, 590)
-            submf.xc = method[0]
-            submf.grids.atom_grid = (99, 590)
             submf.xc = method[0]
             submf.grids.atom_grid = (99, 590)
         submf = scf.addons.remove_linear_dep_(submf, threshold=1e-6, lindep=1e-7)

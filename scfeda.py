@@ -23,7 +23,7 @@ import time
 import copy
 
 
-EDATHRESH = 1e-8
+#EDATHRESH = 1e-8
 
 class EDA():
     r'''
@@ -63,6 +63,8 @@ class EDA():
         self.anal = False
         self.showinter = False
         self.exclude_cap = False
+        self.inter_thresh = 1e-7
+        self.conv_thresh = 1e-7
         ### GFEA ####
         self.molchgs = None # mol charges
         #self.envchgs = None # env frag charges
@@ -101,8 +103,8 @@ class EDA():
                 atm_ejk = atm_ej + atm_ek
                 RR1 = e1_1 + enuc1 + ejk1
                 RR2 = e1_2 + enuc2 + ejk2
-                RR3 = dict_merge(ejk3,e1_3)
-                RR4 = ejk4
+                RR3 = dict_cut(dict_merge(ejk3,e1_3), self.inter_thresh)
+                RR4 = dict_cut(ejk4, self.inter_thresh)
                 #RR_inter = eda_inter.get_RR_inter(e1_1+ejk1,e1_2+enuc2+ejk2)
             else:
                 atm_ej, atm_ek = jkeda.get_Ejk(self, 'jk', self.jktype)
@@ -150,12 +152,12 @@ class EDA():
         logger.slog(self.stdout,"SCF Energy =%16.10f", (scfE))
         if ('charge' not in self.method) and ('qmmm' not in self.method):
             logger.slog(self.stdout,"Err of totE =%16.10f", (totE - scfE))
-            conv = (totE - scfE) < EDATHRESH
+            conv = (totE - scfE) < self.conv_thresh
         else:
             totE_fake = (atm_E - bg_corrxn + bg_corrxn_fake).sum()
             logger.slog(self.stdout,"fake tot Energy =%16.10f", (totE_fake))
             logger.slog(self.stdout,"Err of fake totE =%16.10f", (totE_fake - scfE))
-            conv = (totE_fake - scfE) < EDATHRESH
+            conv = (totE_fake - scfE) < self.conv_thresh
         ok = ['FAIL','OK']
         logger.slog(self.stdout,ok[conv])
 
@@ -594,3 +596,10 @@ def dict_merge(*dicts):
             else:
                 sum_dict[k] = v
     return sum_dict
+
+def dict_cut(olddict, thresh):
+    newdict = {}
+    for k,v in olddict.items():
+        if abs(v) > thresh:
+            newdict[k] = v
+    return newdict
