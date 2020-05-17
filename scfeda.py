@@ -62,6 +62,7 @@ class EDA():
         self.built = False
         self.anal = False
         self.showinter = False
+        self.exclude_cap = False
         ### GFEA ####
         self.molchgs = None # mol charges
         #self.envchgs = None # env frag charges
@@ -173,7 +174,7 @@ class EDA():
         return atm_E, totE, conv, inter_terms
 
     def get_frags(self):
-        subsys_lso, num_subsys, frg_intot = gfea3.lso_parser(self.lso)
+        subsys_lso, num_subsys, num_subsys_tot, frg_intot, num_atoms = gfea3.lso_parser(self.lso)
         frags_list = []
         for cenfrg in range(1,len(frg_intot)+1):
             f = gfea3.Frag()
@@ -369,7 +370,7 @@ def get_bg_corrxn(eda, charge='charge'):
                 chg_insub = misc.one2zero(f.atm_insub)
                 vchg_frag = bg.inter_elecbg(mol, dm, bgcoords[chg_insub], bgchgs[chg_insub])
                 felecbg_a, felecbg2, felecbg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.nfrag+2)
-                print(felecbg2)
+                #print(felecbg2)
                 for g in eda.frag_list:
                     if g.layer is 'b': 
                         continue
