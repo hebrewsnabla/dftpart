@@ -165,10 +165,12 @@ class EDA():
             logger.slog(self.stdout,"%s %i %16.10f", self.mol.atom_symbol(i),i+1,atm_E[i])
         inter_terms = []
         if self.showinter: 
-            logger.log(self.stdout_inter, "RR1",RR1)
-            logger.log(self.stdout_inter, "RR2",RR2)
-            logger.mlog(self.stdout_inter, "RR3",RR3)
-            logger.mlog(self.stdout_inter, "RR4",RR4)
+            RR1 = misc.mat2dict(RR1, self.inter_thresh, self.frag2layer)
+            RR2 = misc.mat2dict(RR2, self.inter_thresh, self.frag2layer)
+            logger.ilog(self.stdout_inter, "RR1",RR1)
+            logger.ilog(self.stdout_inter, "RR2",RR2)
+            logger.ilog(self.stdout_inter, "RR3",RR3)
+            logger.ilog(self.stdout_inter, "RR4",RR4)
             inter_terms = [RR1, RR2, RR3, RR4] 
             #if 'charge' in self.method:
             #    inter_terms.append(bg2) 
@@ -253,7 +255,9 @@ def build(eda, gjf, method):
     eda.nfrag = len(eda.frag_list)
     eda.ncap = 0
     eda.capatoms = []
+    eda.frag2layer = {}
     for f in eda.frag_list:
+        eda.frag2layer[f.label] = f.layer
         if f.layer == 'cap': 
             eda.ncap += 1
             eda.capatoms.append(f.atm_insub[0])
@@ -587,19 +591,3 @@ def get_Enuc(eda):
     atm_enucnuc = atm_enucnuc, enuc1, enuc2
     return atm_enucnuc
 
-def dict_merge(*dicts):
-    sum_dict = {}
-    for d in dicts:
-        for k,v in d.items():
-            if k in sum_dict.keys():
-                sum_dict[k] += v
-            else:
-                sum_dict[k] = v
-    return sum_dict
-
-def dict_cut(olddict, thresh):
-    newdict = {}
-    for k,v in olddict.items():
-        if abs(v) > thresh:
-            newdict[k] = v
-    return newdict
