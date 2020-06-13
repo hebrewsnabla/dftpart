@@ -232,8 +232,8 @@ class GFEA():
         return self.E_GFEA, self.atom_E
 
 def alloc_inter(intert_list):
-    inter1 = np.zeros()
-    inter2 = np.zeros()
+    #inter1 = np.zeros()
+    #inter2 = np.zeros()
     inter3 = {}
     inter4 = {}
 
