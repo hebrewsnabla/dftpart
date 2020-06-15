@@ -498,7 +498,7 @@ def get_E1(eda):
         #intersum = e1_1.sum() + e1_2.sum() + e1_3
         #e1_3 = np.asarray(e1_3)
         #print(e1_3)
-        e1_3 = eda_inter.simp3(e1_3, eda.nfrag)
+        e1_3 = eda_inter.simp3(e1_3, eda.nfrag, eda.frag2layer)
     else:
         atom_1enuc = np.asarray(h1e(eda.dm,bas2atm,int1enuc,mol.natm,nao))[0:mol.natm]
     #with open(eda.output+'-eda.log','a') as f:
