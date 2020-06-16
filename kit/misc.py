@@ -18,22 +18,65 @@ def one2zero(alist):
     return blist
 
 def mat2dict(mat, thresh, f2layer):
-    mdict = {}
+    mdict = EDict()
     if mat.ndim==1:
         n = mat.shape[0]
         for i in range(n):
             if abs(mat[i]) > thresh:
-                layer = f2layer[i]
-                mdict[(i)] = [mat[i], (layer)]
+                try:
+                    layer = f2layer[i+1]
+                except:
+                    pass
+                else:
+                    if layer is 'cap':
+                        continue
+                    mdict[(i+1)] = [mat[i], (layer)]
     elif mat.ndim==2:
         n,m = mat.shape[0], mat.shape[1]
         for i in range(n):
             for j in range(i,n):
-                ilayer = f2layer[i]
-                jlayer = f2layer[j]
-                if abs(mat[i,j]) > thresh: 
-                    mdict[(i,j)] = [mat[i,j], (ilayer, jlayer)]
+                try:
+                    ilayer = f2layer[i+1]
+                    jlayer = f2layer[j+1]
+                except:
+                    pass
+                else:
+                    if 'cap' in (ilayer, jlayer):
+                        continue
+                    if abs(mat[i,j]) > thresh: 
+                        mdict[(i+1,j+1)] = [mat[i,j], (ilayer, jlayer)]
     return mdict
+
+class EDict(dict):
+    def energies(self):
+        evalues = []
+        for v in self.values():
+            evalues.append(v[0])
+        return evalues   
+    def cut(self, thresh):
+        newdict = {}
+        for k,v in self.items():
+            if abs(v[0]) > thresh:
+                newdict[k] = v
+        return newdict
+        
+    def merge(self, *dicts):
+        sum_edict = self
+        for d in dicts:
+            for k,v in d.items():
+                if k in sum_edict.keys():
+                    sum_edict[k][0] += v[0]
+                else:
+                    sum_edict[k] = v
+        return sum_edict
+
+
+def dict_cut(olddict, thresh):
+    newdict = {}
+    for k,v in olddict.items():
+        if abs(v) > thresh:
+            newdict[k] = v
+    return newdict
 
 def dict_merge(*dicts):
     sum_dict = {}
@@ -44,10 +87,3 @@ def dict_merge(*dicts):
             else:
                 sum_dict[k] = v
     return sum_dict
-
-def dict_cut(olddict, thresh):
-    newdict = {}
-    for k,v in olddict.items():
-        if abs(v) > thresh:
-            newdict[k] = v
-    return newdict

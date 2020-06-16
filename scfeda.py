@@ -62,7 +62,7 @@ class EDA():
         self.built = False
         self.anal = False
         self.showinter = False
-        self.exclude_cap = False
+        self.exclude_cap = True
         self.inter_thresh = 1e-7
         self.conv_thresh = 1e-7
         ### GFEA ####
@@ -103,8 +103,8 @@ class EDA():
                 atm_ejk = atm_ej + atm_ek
                 RR1 = e1_1 + enuc1 + ejk1
                 RR2 = e1_2 + enuc2 + ejk2
-                RR3 = dict_cut(dict_merge(ejk3,e1_3), self.inter_thresh)
-                RR4 = dict_cut(ejk4, self.inter_thresh)
+                RR3 = ejk3.merge(e1_3).cut(self.inter_thresh)
+                RR4 = ejk4.cut(self.inter_thresh)
                 #RR_inter = eda_inter.get_RR_inter(e1_1+ejk1,e1_2+enuc2+ejk2)
             else:
                 atm_ej, atm_ek = jkeda.get_Ejk(self, 'jk', self.jktype)
@@ -167,14 +167,18 @@ class EDA():
         if self.showinter: 
             RR1 = misc.mat2dict(RR1, self.inter_thresh, self.frag2layer)
             RR2 = misc.mat2dict(RR2, self.inter_thresh, self.frag2layer)
+            RC2 = misc.mat2dict(bg2, self.inter_thresh, self.frag2layer)
+            RC3 = bg3
             logger.ilog(self.stdout_inter, "RR1",RR1)
             logger.ilog(self.stdout_inter, "RR2",RR2)
             logger.ilog(self.stdout_inter, "RR3",RR3)
             logger.ilog(self.stdout_inter, "RR4",RR4)
+            logger.ilog(self.stdout_inter, "RC2",RC2)
+            logger.ilog(self.stdout_inter, "RC3",RC3)
             inter_terms = [RR1, RR2, RR3, RR4] 
-            #if 'charge' in self.method:
-            #    inter_terms.append(bg2) 
-            #    inter_terms.append(bg3)
+            if 'charge' in self.method:
+                inter_terms.append(RC2) 
+                inter_terms.append(RC3)
         return atm_E, totE, conv, inter_terms
 
     def get_frags(self):
@@ -387,19 +391,23 @@ def get_bg_corrxn(eda, charge='charge'):
                             continue
                         bg3gh = felecbg3[g.label-1,h.label-1]
                         if abs(bg3gh) > 1e-12:
-                            ghf = "%s,%s,%s" %(g.label,h.label,f.label)
-                            bg3[ghf] = bg3gh
+                            ghf = (g.label,h.label,f.label)
+                            layers = (g.layer, h.layer, f.layer)
+                            if 'cap' in layers:
+                                continue
+                            bg3[ghf] = [bg3gh, layers]
             bg2 = elecbg2 + nucbg2
+            #bg2 = misc.mat2dict(bg2, eda.inter_thresh, eda.frag2layer)
             #bgbg, bgbg2 = bg.inter_bgbg(mol.atom_coords(), molchgs, bgcoords, bgchgs)
             #atom_elecbg_f = 2*np.asarray(elecbg)[0:mol.natm] - 0.5*bgbg
             #bg3 = eda_inter.simp3(bg3)
             #logger.mlog(eda.stdout_inter, "elecbg_a", atom_elecbg.sum())
             #logger.mlog(eda.stdout_inter, "elecbg_f", atom_elecbg_f.sum())
-            if eda.verbose>4:
+            if eda.verbose >= 6:
                 logger.log(eda.stdout_inter, "elecbg2", elecbg2)
                 logger.log(eda.stdout_inter, "nucbg2", nucbg2)
             logger.log(eda.stdout_inter, "bg2", bg2)
-            logger.mlog(eda.stdout_inter, "bg3", bg3)
+            logger.ilog(eda.stdout_inter, "bg3", bg3)
             #logger.mlog(eda.stdout_inter, "bgbg2", bgbg2)
 
     elif charge=='qmmm':
@@ -436,8 +444,8 @@ def get_E1(eda):
         kin1 = np.zeros(eda.nfrag + 2)
         kin2 = np.zeros((eda.nfrag + 2, eda.nfrag +2))
     naorange = range(nao)
-    if eda.exclude_cap:
-        naorange -= eda.capbas_p
+    #if eda.exclude_cap:
+    #    naorange -= eda.capbas_p
     for i in naorange:
         for j in naorange:
             #print(dm,kin)
@@ -463,8 +471,8 @@ def get_E1(eda):
 
     fakeatm = []
     for n in range(mol.natm):
-        if eda.exclude_cap and (n+1 in eda.capatoms):
-            continue
+        #if eda.exclude_cap and (n+1 in eda.capatoms):
+        #    continue
         back = copy.copy(mol._atm)
         for i in range(mol.natm):
             if (i!=n):
@@ -475,9 +483,9 @@ def get_E1(eda):
     #print(fakeatm)
     int1enuc = []
     for i in range(mol.natm):
-        if eda.exclude_cap and (n+1 in eda.capatoms):
-            #int1en = 
-            continue
+        #if eda.exclude_cap and (n+1 in eda.capatoms):
+        #    #int1en = 
+        #    continue
         if mol.cart:
             int1en = moleintor.getints("int1e_nuc_cart",fakeatm[i],mol._bas, mol._env)
         else:
@@ -508,7 +516,7 @@ def get_E1(eda):
     if eda.showinter:
         logger.log(eda.stdout_inter,"e1_1",e1_1)
         logger.log(eda.stdout_inter,"e1_2",e1_2)
-        logger.mlog(eda.stdout_inter,"e1_3 ",e1_3)
+        logger.ilog(eda.stdout_inter,"e1_3 ",e1_3)
     #with open(eda.output+'-eda.log','a') as f:
     #anal = True
     if eda.anal and eda.showinter:
@@ -517,7 +525,7 @@ def get_E1(eda):
         tot_fkin = kin1.sum() + np.triu(kin2).sum()
         tot_a1enuc = atom_1enuc.sum()
         tot_1enuc = np.einsum('ij,ji',eda.dm,moleintor.getints("int1e_nuc_sph",mol._atm,mol._bas, mol._env))
-        tot_fe1 = e1_1.sum() + e1_2.sum() + sum(e1_3.values())
+        tot_fe1 = e1_1.sum() + e1_2.sum() + sum(e1_3.energies())
 
         '''basis_range = range(53)
         dm1 = eda.dm[np.ix_(basis_range, basis_range)]
@@ -590,4 +598,5 @@ def get_Enuc(eda):
             logger.mlog(eda.stdout, "Err_aenuc", enucnuc_err)
     atm_enucnuc = atm_enucnuc, enuc1, enuc2
     return atm_enucnuc
+
 

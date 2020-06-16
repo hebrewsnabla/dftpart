@@ -24,6 +24,18 @@ def mlog(out, txt, *args, sep=" ", endl=True):
     out.write(s)
     out.flush()
 
+def ilog(out, txt, idict):
+    s = txt + ": \n"
+    s += 'inter term      layer        energy\n'
+    for k,v in idict.items():
+        s += json.dumps(k)
+        s += '    '
+        s += json.dumps(v[1])
+        s += '    %.6f\n' % v[0]
+    out.write(s)
+    out.flush()
+    
+
 def log(out, txt, obj, label=None, ncol=10, digits=8, newl=True):
     if isinstance(obj, list):
         mat = np.array(obj)

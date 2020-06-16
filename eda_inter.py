@@ -1,8 +1,9 @@
 #from scfeda import p2f
 from new_eda import preri
-from kit import logger
+from kit import logger, misc
 #import pymp
 import numpy as np
+
 
 def p2f(atm2bas_p):
     atm2bas_f = []
@@ -54,12 +55,13 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     #ejk2 = np.triu(ej2+ek2)
     logger.log(eda.stdout_inter,"ejk1=",ejk1)
     logger.log(eda.stdout_inter,"ejk2=",ejk2)
-    logger.mlog(eda.stdout_inter,"ejk3=",ejk3)
-    logger.mlog(eda.stdout_inter,"ejk4=",ejk4)
+    logger.ilog(eda.stdout_inter,"ejk3=",ejk3)
+    logger.ilog(eda.stdout_inter,"ejk4=",ejk4)
     
-    interejksum = ejk1.sum() + ejk2.sum() + sum(ejk3.values()) + sum(ejk4.values())
+    interejksum = ejk1.sum() + ejk2.sum() + sum(ejk3.energies()) + sum(ejk4.energies())
     logger.mlog(eda.stdout_inter,"interejksum=",interejksum)
     logger.mlog(eda.stdout_inter,"ejksum=",ejksum)
+
     #if eda.anal:
     #    tot_aej = atom_ej.sum()
     #    ej_err = tot_aej - np.einsum('ij,ji',dm,eda.mf.get_j(mol,dm))
@@ -75,18 +77,20 @@ def get_atm2sub(natm, atomlist):
     return atm2sub
 
 def simp3(e3, nfrag, f2layer):
-    e3simp = {}
+    e3simp = misc.EDict()
     for f in range(nfrag+2):
         for g in range(f+1,nfrag+2):
             for h in range(g+1, nfrag+2):
                 fgh = (f+1,g+1,h+1)
                 if abs(e3[f,g,h]) > 1e-12:
                     layers = (f2layer[f+1], f2layer[g+1], f2layer[h+1])
+                    if 'cap' in layers:
+                        continue
                     e3simp[fgh] = [e3[f,g,h], layers]
     return e3simp
 
 def simp4(e4, nfrag, f2layer):
-    e4simp = {}
+    e4simp = misc.EDict()
     for f in range(nfrag+2):
         for g in range(f+1,nfrag+2):
             for h in range(g+1, nfrag+2):
@@ -94,6 +98,8 @@ def simp4(e4, nfrag, f2layer):
                     fghi = (f+1,g+1,h+1,i+1)
                     if abs(e4[f,g,h,i]) > 1e-12:
                         layers = (f2layer[f+1], f2layer[g+1], f2layer[h+1], f2layer[i+1])
+                        if 'cap' in layers:
+                            continue
                         e4simp[fghi] = [e4[f,g,h,i], layers]
     return e4simp
 

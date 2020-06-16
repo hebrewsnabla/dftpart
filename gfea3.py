@@ -59,7 +59,7 @@ class GFEA():
         # GFEA settings
         self.showinter = False
         self.do_deriv = False
-        self.exclude_cap = False
+        self.exclude_cap = True
         #self.Gau_version = 'G16'
         #self.fchklist = None
     def build(self):
@@ -227,7 +227,8 @@ class GFEA():
         logger.log(self.stdout, "atom_E", self.atom_E)
         logger.slog(self.stdout, "E_GFEA (atom) = %.10f", self.E_GFEA)
         if self.showinter:
-            tot_inter1, tot_inter2, tot_inter3, tot_inter4 = alloc_inter(all_intert)    
+            pass
+            #tot_inter1, tot_inter2, tot_inter3, tot_inter4 = alloc_inter(all_intert)    
 
         return self.E_GFEA, self.atom_E
 
