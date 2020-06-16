@@ -1,3 +1,4 @@
+from priority import *
 
 def p2f(atm2bas_p):
     atm2bas_f = []
@@ -44,7 +45,8 @@ def mat2dict(mat, thresh, f2layer):
                     if 'cap' in (ilayer, jlayer):
                         continue
                     if abs(mat[i,j]) > thresh: 
-                        mdict[(i+1,j+1)] = [mat[i,j], (ilayer, jlayer)]
+                        layers = tuple(sorted((ilayer, jlayer)))
+                        mdict[(i+1,j+1)] = [mat[i,j], layers]
     return mdict
 
 class EDict(dict):
@@ -57,7 +59,8 @@ class EDict(dict):
         newdict = {}
         for k,v in self.items():
             if abs(v[0]) > thresh:
-                newdict[k] = v
+                k = tuple(sorted(k))
+                newdict[k] = [v[0], tuple(sorted(v[1]))]
         return newdict
         
     def merge(self, *dicts):
@@ -69,6 +72,19 @@ class EDict(dict):
                 else:
                     sum_edict[k] = v
         return sum_edict
+    def update(self, *dicts):
+        newdict = self
+        for d in dicts:
+            for term, e in d.items():
+                if term in newdict:
+                    current_e = newdict[term]
+                    if prior(e[-1]) < prior(current_e[-1]):
+                        newdict[term] = e
+                    elif prior(e[-1]) == prior(current_e[-1]):
+                        newdict[term] = newdict[term] + e
+                else:
+                    newdict[term] = e
+        return newdict
 
 
 def dict_cut(olddict, thresh):
@@ -87,3 +103,9 @@ def dict_merge(*dicts):
             else:
                 sum_dict[k] = v
     return sum_dict
+
+def prior(eterm):
+    priority_dict = [prior1, prior2, prior3, prior4]
+    l = len(eterm)
+    pdict = priority_dict[l-1]
+    return pdict[eterm]

@@ -18,7 +18,7 @@ import sys, os
 import time
 import subprocess
 
-from kit import logger, gjf_kit
+from kit import logger, gjf_kit, misc
 from dftpart import scfeda
 import labc
 
@@ -227,16 +227,32 @@ class GFEA():
         logger.log(self.stdout, "atom_E", self.atom_E)
         logger.slog(self.stdout, "E_GFEA (atom) = %.10f", self.E_GFEA)
         if self.showinter:
-            pass
-            #tot_inter1, tot_inter2, tot_inter3, tot_inter4 = alloc_inter(all_intert)    
+            #pass
+            tot_inter1, tot_inter2, tot_inter3, tot_inter4 = alloc_inter(all_intert)   
+            logger.ilog(self.stdout, 'inter1', tot_inter1) 
+            logger.ilog(self.stdout, 'inter2', tot_inter2) 
+            logger.ilog(self.stdout, 'inter3', tot_inter3) 
+            logger.ilog(self.stdout, 'inter4', tot_inter4) 
+            self.tot_inter = [tot_inter1, tot_inter2, tot_inter3, tot_inter4]
 
-        return self.E_GFEA, self.atom_E
+        return self.E_GFEA, self.atom_E, self.tot_inter
 
 def alloc_inter(intert_list):
-    #inter1 = np.zeros()
-    #inter2 = np.zeros()
-    inter3 = {}
-    inter4 = {}
+    #import priority
+    inter1 = misc.EDict()
+    inter2 = misc.EDict()
+    inter3 = misc.EDict()
+    inter4 = misc.EDict()
+
+    for sub in intert_list:
+        RR1,RR2,RR3,RR4,RC2,RC3 = sub[0],sub[1],sub[2],sub[3],sub[4],sub[5]
+        inter1.update(RR1)
+        inter2.update(RR2, RC2)
+        inter3.update(RR3, RC3)
+        inter4.update(RR4)
+    return inter1, inter2, inter3, inter4
+
+
 
 
 class Frag():
@@ -272,7 +288,7 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env, _bg):
         f = Frag()
         f.atm_intot = gfea.frg_intot[bgfrg-1]
         f.label = bgfrg
-        f.layer = 'b'
+        f.layer = 'q'
         frags_list.append(f)
     
     #if len(_cen) > 0:
@@ -304,9 +320,9 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env, _bg):
         #    if 'charge' in gfea.method:
         #        molchgs[atomlist_lab.index(label)] = 0.0
     list_chg = get_listchg(gfea.num_atoms, atomlist_lac)
-    print(gfea.num_atoms)
-    print(atomlist_lac)
-    print(list_chg)
+    #print(gfea.num_atoms)
+    #print(atomlist_lac)
+    #print(list_chg)
     for f in frags_list:
         if (f.layer == 'c') or (f.layer == 'e'):
             #f.selfchg = np.zeros(len(f.atm_intot))
@@ -314,7 +330,7 @@ def get_frags(gfea, atomlist_lab, atomlist_lac, _cen, _env, _bg):
                 f.atm_insub.append(atomlist_lac.index(label)+1)
                 if 'charge' in gfea.method:
                     f.selfchg.append(gfea.chglist[label-1])
-        elif f.layer == 'b':
+        elif f.layer == 'q':
             for label in f.atm_intot:
                 f.atm_insub.append(list_chg.index(label)+1)
                 if 'charge' in gfea.method:

@@ -168,7 +168,7 @@ class EDA():
             RR1 = misc.mat2dict(RR1, self.inter_thresh, self.frag2layer)
             RR2 = misc.mat2dict(RR2, self.inter_thresh, self.frag2layer)
             RC2 = misc.mat2dict(bg2, self.inter_thresh, self.frag2layer)
-            RC3 = bg3
+            RC3 = bg3.cut(self.inter_thresh)
             logger.ilog(self.stdout_inter, "RR1",RR1)
             logger.ilog(self.stdout_inter, "RR2",RR2)
             logger.ilog(self.stdout_inter, "RR3",RR3)
@@ -287,7 +287,7 @@ def get_atm2frg(natm, frag_list):
     atm2frg = []
     for a in range(natm):
         for f in frag_list:
-            if f.layer == 'b':
+            if f.layer == 'q':
                 continue
             if (a+1 in f.atm_insub):
                 atm2frg.append(f.label)
@@ -297,7 +297,7 @@ def get_bas2frg(bas2atm, frag_list):
     bas2frg = []
     for atm in bas2atm:
         for f in frag_list:
-            if f.layer == 'b': 
+            if f.layer == 'q': 
                 continue
             if (atm+1 in f.atm_insub):
                 bas2frg.append(f.label)
@@ -364,7 +364,7 @@ def get_bg_corrxn(eda, charge='charge'):
         elecbg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
         nucbg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
         bg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
-        bg3 = {}
+        bg3 = misc.EDict()
         bgbg2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
     vchg = bg.inter_elecbg(mol, dm, bgcoords, bgchgs)
     #bas2atm = get_bas2atm(atm2bas,nao,mol.natm)
@@ -375,19 +375,19 @@ def get_bg_corrxn(eda, charge='charge'):
         atom_nucbg = bg.inter_nucbg(mol, bgcoords, bgchgs)
         if eda.showinter:
             for f in eda.frag_list:
-                if f.layer is not 'b': 
+                if f.layer is not 'q': 
                     continue
                 chg_insub = misc.one2zero(f.atm_insub)
                 vchg_frag = bg.inter_elecbg(mol, dm, bgcoords[chg_insub], bgchgs[chg_insub])
                 felecbg_a, felecbg2, felecbg3 = bgh1e_inter(dm,bas2atm, bas2frg, vchg_frag, mol.natm,nao,eda.nfrag+2)
                 #print(felecbg2)
                 for g in eda.frag_list:
-                    if g.layer is 'b': 
+                    if g.layer is 'q': 
                         continue
                     elecbg2[g.label-1,f.label-1] = felecbg2[g.label-1]
                     nucbg2[g.label-1,f.label-1] = bg.inter_nucbg_f(mol, g.atm_insub, bgcoords, bgchgs, f.atm_insub)
                     for h in eda.frag_list:
-                        if (h.layer is 'b') or (h.label <= g.label):
+                        if (h.layer is 'q') or (h.label <= g.label):
                             continue
                         bg3gh = felecbg3[g.label-1,h.label-1]
                         if abs(bg3gh) > 1e-12:
@@ -563,9 +563,9 @@ def get_Enuc(eda):
     logger.log(eda.stdout,"atom_enucnuc=",atm_enucnuc)
     if eda.showinter:
         for f in eda.frag_list:
-            if f.layer == 'b': continue
+            if f.layer == 'q': continue
             for g in eda.frag_list:
-                if g.layer == 'b': continue
+                if g.layer == 'q': continue
                 if g.label < f.label:
                     continue
                 else:

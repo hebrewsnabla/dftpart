@@ -30,8 +30,12 @@ def ilog(out, txt, idict):
     for k,v in idict.items():
         s += json.dumps(k)
         s += '    '
-        s += json.dumps(v[1])
-        s += '    %.6f\n' % v[0]
+        lenv = len(v)//2
+        for i in range(lenv):
+            if i>0:
+                s+= '                '
+            s += json.dumps(v[2*i+1])
+            s += '    %.6f\n' % v[2*i]
     out.write(s)
     out.flush()
     
