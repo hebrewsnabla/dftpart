@@ -167,16 +167,16 @@ class EDA():
         if self.showinter: 
             RR1 = misc.mat2dict(RR1, self.inter_thresh, self.frag2layer)
             RR2 = misc.mat2dict(RR2, self.inter_thresh, self.frag2layer)
-            RC2 = misc.mat2dict(bg2, self.inter_thresh, self.frag2layer)
-            RC3 = bg3.cut(self.inter_thresh)
             logger.ilog(self.stdout_inter, "RR1",RR1)
             logger.ilog(self.stdout_inter, "RR2",RR2)
             logger.ilog(self.stdout_inter, "RR3",RR3)
             logger.ilog(self.stdout_inter, "RR4",RR4)
-            logger.ilog(self.stdout_inter, "RC2",RC2)
-            logger.ilog(self.stdout_inter, "RC3",RC3)
             inter_terms = [RR1, RR2, RR3, RR4] 
             if 'charge' in self.method:
+                RC2 = misc.mat2dict(bg2, self.inter_thresh, self.frag2layer)
+                RC3 = bg3.cut(self.inter_thresh)
+                logger.ilog(self.stdout_inter, "RC2",RC2)
+                logger.ilog(self.stdout_inter, "RC3",RC3)
                 inter_terms.append(RC2) 
                 inter_terms.append(RC3)
         return atm_E, totE, conv, inter_terms
