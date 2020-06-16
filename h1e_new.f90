@@ -114,7 +114,7 @@ e1_2=0.0d0
 e1_3=0.0d0
 H1E_THRESH = 1.0d-12
 
-write(*,*) hcore(1,1,2), hcore(1,2,3)
+!write(*,*) hcore(1,1,2), hcore(1,2,3)
   
 
 !$OMP PARALLEL DO schedule(guided) &

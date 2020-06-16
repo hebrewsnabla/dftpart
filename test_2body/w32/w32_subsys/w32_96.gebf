@@ -1,0 +1,19 @@
+# GEBF Subsys
+MyID=96
+Atom number=3
+Method=RHF
+Charge=0
+Multiplicity=1
+Number of basis functions=24
+E(SCF)=-91.14470345128733
+Mulliken Charges                           R   N=           3
+ -7.38646950E-01  3.30534363E-01  4.08112587E-01
+NPA Charges                                R   N=           3
+ -1.01469824E+00  4.77315213E-01  5.37383026E-01
+Cartesian Gradient                         R   N=           9
+  0.00000000E+00  0.00000000E+00  0.00000000E+00  0.00000000E+00  0.00000000E+00
+  0.00000000E+00  0.00000000E+00  0.00000000E+00  0.00000000E+00
+Dipole Moment
+4.23603284E-01 -6.69101982E-01 -5.52136016E-01
+# END
+

@@ -7,5 +7,6 @@ test_2body/*
 !test_2body/c8/
 !test_2body/c8b/
 !test_2body/w19/
+!test_2body/w32/
 __pycache__/
 backup/

@@ -228,14 +228,19 @@ class GFEA():
         logger.slog(self.stdout, "E_GFEA (atom) = %.10f", self.E_GFEA)
         if self.showinter:
             #pass
-            tot_inter1, tot_inter2, tot_inter3, tot_inter4 = alloc_inter(all_intert)   
-            logger.ilog(self.stdout, 'inter1', tot_inter1) 
-            logger.ilog(self.stdout, 'inter2', tot_inter2) 
-            logger.ilog(self.stdout, 'inter3', tot_inter3) 
-            logger.ilog(self.stdout, 'inter4', tot_inter4) 
-            self.tot_inter = [tot_inter1, tot_inter2, tot_inter3, tot_inter4]
+            self.all_inter, self.all_inter_ave, self.E_GFEA_dsi = alloc_inter(all_intert)   
+            logger.ilog(self.stdout, 'inter1', self.all_inter[0]) 
+            logger.ilog(self.stdout, 'inter2', self.all_inter[1]) 
+            logger.ilog(self.stdout, 'inter3', self.all_inter[2]) 
+            logger.ilog(self.stdout, 'inter4', self.all_inter[3]) 
+            logger.ilog(self.stdout, 'inter1_ave', self.all_inter_ave[0]) 
+            logger.ilog(self.stdout, 'inter2_ave', self.all_inter_ave[1]) 
+            logger.ilog(self.stdout, 'inter3_ave', self.all_inter_ave[2]) 
+            logger.ilog(self.stdout, 'inter4_ave', self.all_inter_ave[3]) 
+            logger.slog(self.stdout, '\nE_GFEA(dsi): %.6f', self.E_GFEA_dsi) 
+            
 
-        return self.E_GFEA, self.atom_E, self.tot_inter
+        return self.E_GFEA, self.atom_E, self.all_inter, self.E_GFEA_dsi
 
 def alloc_inter(intert_list):
     #import priority
@@ -250,7 +255,16 @@ def alloc_inter(intert_list):
         inter2.update(RR2, RC2)
         inter3.update(RR3, RC3)
         inter4.update(RR4)
-    return inter1, inter2, inter3, inter4
+    all_inter = [inter1, inter2, inter3, inter4]
+    inter1ave = inter1.average()
+    inter2ave = inter2.average()
+    inter3ave = inter3.average()
+    inter4ave = inter4.average()
+    all_inter_ave = [inter1ave, inter2ave, inter3ave, inter4ave]
+
+    # dsi: direct sum of inter energies
+    E_GFEA_dsi = inter1ave.sum() + inter2ave.sum() + inter3ave.sum() + inter4ave.sum()
+    return all_inter, all_inter_ave, E_GFEA_dsi
 
 
 

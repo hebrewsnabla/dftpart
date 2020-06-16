@@ -1,4 +1,5 @@
 from priority import *
+import numpy as np
 
 def p2f(atm2bas_p):
     atm2bas_f = []
@@ -35,7 +36,7 @@ def mat2dict(mat, thresh, f2layer):
     elif mat.ndim==2:
         n,m = mat.shape[0], mat.shape[1]
         for i in range(n):
-            for j in range(i,n):
+            for j in range(n):
                 try:
                     ilayer = f2layer[i+1]
                     jlayer = f2layer[j+1]
@@ -45,8 +46,9 @@ def mat2dict(mat, thresh, f2layer):
                     if 'cap' in (ilayer, jlayer):
                         continue
                     if abs(mat[i,j]) > thresh: 
+                        term = tuple(sorted((i+1,j+1)))
                         layers = tuple(sorted((ilayer, jlayer)))
-                        mdict[(i+1,j+1)] = [mat[i,j], layers]
+                        mdict[term] = [mat[i,j], layers]
     return mdict
 
 class EDict(dict):
@@ -85,6 +87,16 @@ class EDict(dict):
                 else:
                     newdict[term] = e
         return newdict
+
+    def average(self):
+        adict = EDict()
+        for term,e in self.items():
+            adict[term] = [np.array(e[::2]).mean()]
+        #print(adict)
+        return adict
+
+    def sum(self):
+        return sum(self.energies())
 
 
 def dict_cut(olddict, thresh):
