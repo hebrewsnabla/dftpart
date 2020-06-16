@@ -4,7 +4,7 @@
     - Python 3.6 (and some common modules, which are provided in Anaconda3)
     - PySCF 
     - simplejson
-    - GEBF (see [here](itcc.nju.edu.cn/lsqc))
+    - GEBF (see [here](https://itcc.nju.edu.cn/lsqc))
 * Installation
 Specify the path to PySCF in Makefile, and
 ```
