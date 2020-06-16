@@ -1,4 +1,4 @@
-from priority import *
+from .priority import *
 import numpy as np
 
 def p2f(atm2bas_p):
