@@ -2,7 +2,7 @@ from . import numint_sep, gen_grid_sep
 from pyscf import dft
 import numpy as np
 import time
-from . import scfeda
+from . import scfeda, jkeda
 from ..kit import logger
 
 ok = ['FAIL','OK']
@@ -32,7 +32,7 @@ def analysis(ks, kwd=['atom','dexc']):
     out.close()
     return atom_exc, dexc
 
-def get_atmexc(eda,atm2bas):
+def get_atmexc(eda):
     t1 = time.time()
     dm = eda.dm
     ks = eda.mf
@@ -55,13 +55,13 @@ def get_atmexc(eda,atm2bas):
     if ks.omega is not None: omega = ks.omega
     if abs(hyb) > 1e-10:
         if eda.showinter:
-            atom_ej, atom_ek, ej1, ej2, ej3, ej4, ek1, ek2, ek3, ek4 = scfeda.get_Ejk(eda,atm2bas,'jk')
+            atom_ej, atom_ek, ej1, ej2, ej3, ej4, ek1, ek2, ek3, ek4 = jkeda.get_Ejk(eda,'jk')
             ejxc1 = ej1 + hyb*ek1 + atom_exc
             ejxc2 = ej2 + hyb*ek2
             ejxc3 = ej3 + hyb*ek3
             ejxc4 = ej4 + hyb*ek4
         else:
-            atom_ej, atom_ek = scfeda.get_Ejk(eda,atm2bas,'jk')
+            atom_ej, atom_ek = jkeda.get_Ejk(eda, 'jk')
         atom_exc += hyb * atom_ek
         #if abs(omega) > 1e-10:
         #    eklr = get_eklr(mol, dm, omega, hermi=1)*(alpha-hyb)

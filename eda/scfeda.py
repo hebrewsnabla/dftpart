@@ -89,9 +89,10 @@ class EDA():
         #atm2bas_f, atm2bas_p = get_atm2bas(self.mol)
         if self.showinter:
             atm_e1, e1_1, e1_2, e1_3 = get_E1(self)
+            atm_enuc, enuc1, enuc2 = get_Enuc(self)
         else:
             atm_e1 = get_E1(self)
-        atm_enuc, enuc1, enuc2 = get_Enuc(self)
+            atm_enuc = get_Enuc(self)
         t2 = time.time()
         #with open(self.output+'-eda.log','a') as f
         logger.slog(self.stdout,"time for E1, E_nuc: %.5f\n", (t2-t1))
@@ -157,7 +158,7 @@ class EDA():
             logger.slog(self.stdout,"Err of fake totE =%16.10f", (totE_fake - scfE))
             conv = (totE_fake - scfE) < self.conv_thresh
         ok = ['FAIL','OK']
-        logger.slog(self.stdout,ok[conv])
+        logger.slog(self.stdout,"EDA convergence -- "+ok[conv])
 
         for i in range(atm_E.shape[0]):
             logger.slog(self.stdout,"%s %i %16.10f", self.mol.atom_symbol(i),i+1,atm_E[i])
@@ -250,33 +251,35 @@ def build(eda, gjf, method):
     eda.bas2atm, eda.bas2atm_f = get_bas2atm(eda.atm2bas_f, eda.nao, eda.mol.natm) 
     #     atm starts from 0
     # _f: atm starts from 1
-    if eda.frag_list is None:
-        eda.get_frags()
-    eda.bas2frg = get_bas2frg(eda.bas2atm, eda.frag_list)           # frg starts from 1
-    eda.atm2frg = get_atm2frg(mol.natm, eda.frag_list)
-    eda.nfrag = len(eda.frag_list)
-    eda.ncap = 0
-    eda.capatoms = []
-    eda.frag2layer = {}
-    for f in eda.frag_list:
-        eda.frag2layer[f.label] = f.layer
-        if f.layer == 'cap': 
-            eda.ncap += 1
-            eda.capatoms.append(f.atm_insub[0])
-    eda.capbas_p = []
-    eda.capbas_f = []
-    for i in eda.capatoms:
-        eda.capbas_p.append(eda.atm2bas_p[i-1])
-        eda.capbas_f.append(eda.atm2bas_f[i-1])
+    if eda.showinter:
+        if eda.frag_list is None:
+            eda.get_frags()
+        eda.bas2frg = get_bas2frg(eda.bas2atm, eda.frag_list)           # frg starts from 1
+        eda.atm2frg = get_atm2frg(mol.natm, eda.frag_list)
+        eda.nfrag = len(eda.frag_list)
+        eda.ncap = 0
+        eda.capatoms = []
+        eda.frag2layer = {}
+        for f in eda.frag_list:
+            eda.frag2layer[f.label] = f.layer
+            if f.layer == 'cap': 
+                eda.ncap += 1
+                eda.capatoms.append(f.atm_insub[0])
+        eda.capbas_p = []
+        eda.capbas_f = []
+        for i in eda.capatoms:
+            eda.capbas_p.append(eda.atm2bas_p[i-1])
+            eda.capbas_f.append(eda.atm2bas_f[i-1])
     if eda.verbose >= 6:
         logger.mlog(eda.stdout, "atm2bas_f", eda.atm2bas_f)
         logger.mlog(eda.stdout, "atm2bas_p", eda.atm2bas_p)
         #print(eda.bas2atm)
         logger.mlog(eda.stdout, "bas2atm", eda.bas2atm)
-        logger.mlog(eda.stdout, "bas2frg", eda.bas2frg)
-        logger.mlog(eda.stdout, "atm2frg", eda.atm2frg)
-        logger.mlog(eda.stdout, "cap atoms", eda.capatoms)
-        logger.mlog(eda.stdout, "cap basis_p", eda.capbas_p)
+        if eda.showinter:
+            logger.mlog(eda.stdout, "bas2frg", eda.bas2frg)
+            logger.mlog(eda.stdout, "atm2frg", eda.atm2frg)
+            logger.mlog(eda.stdout, "cap atoms", eda.capatoms)
+            logger.mlog(eda.stdout, "cap basis_p", eda.capbas_p)
       
     eda.built = True
     return eda
@@ -349,7 +352,8 @@ def get_bg_corrxn(eda, charge='charge'):
     nao = eda.nao
     atm2bas = eda.atm2bas_f
     bas2atm = eda.bas2atm
-    bas2frg = eda.bas2frg
+    if eda.showinter:
+        bas2frg = eda.bas2frg
     molchgs = eda.molchgs
     bgcoords, bgchgs = eda.bgchgs
     #cen = eda.cen
@@ -431,8 +435,9 @@ def get_E1(eda):
     #dm = eda.dm
     nao = eda.nao
     bas2atm = eda.bas2atm #get_bas2atm(atm2bas,nao,mol.natm)
-    bas2frg = eda.bas2frg
-    atm2frg = eda.atm2frg
+    if eda.showinter:
+        bas2frg = eda.bas2frg
+        atm2frg = eda.atm2frg
     #print(bas2atm)
     kinmat = mol.intor_symmetric('int1e_kin')
     atom_kin = np.zeros(mol.natm)
@@ -546,7 +551,7 @@ def get_E1(eda):
 def get_Enuc(eda):
     mol = eda.mol
     charges = mol.atom_charges()
-    if True: #eda.showinter:
+    if eda.showinter:
         enuc1 = np.zeros(eda.nfrag+2)
         enuc2 = np.zeros((eda.nfrag+2, eda.nfrag+2))
     #coords = mol.atom_coords()
@@ -594,7 +599,8 @@ def get_Enuc(eda):
             logger.slog(eda.stdout, "aenuc: %f", aenuc)
             enucnuc_err = aenuc - tenuc
             logger.mlog(eda.stdout, "Err_aenuc", enucnuc_err)
-    atm_enucnuc = atm_enucnuc, enuc1, enuc2
+    if eda.showinter:
+        atm_enucnuc = atm_enucnuc, enuc1, enuc2
     return atm_enucnuc
 
 
