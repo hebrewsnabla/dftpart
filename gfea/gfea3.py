@@ -229,14 +229,14 @@ class GFEA():
         if self.showinter:
             #pass
             self.all_inter, self.all_inter_ave, self.E_GFEA_dsi = alloc_inter(all_intert)   
-            logger.ilog(self.stdout, 'inter1', self.all_inter[0]) 
-            logger.ilog(self.stdout, 'inter2', self.all_inter[1]) 
-            logger.ilog(self.stdout, 'inter3', self.all_inter[2]) 
-            logger.ilog(self.stdout, 'inter4', self.all_inter[3]) 
-            logger.ilog(self.stdout, 'inter1_ave', self.all_inter_ave[0]) 
-            logger.ilog(self.stdout, 'inter2_ave', self.all_inter_ave[1]) 
-            logger.ilog(self.stdout, 'inter3_ave', self.all_inter_ave[2]) 
-            logger.ilog(self.stdout, 'inter4_ave', self.all_inter_ave[3]) 
+            logger.ilog(self.stdout, 'inter1', self.all_inter[0].cut(1e-4)) 
+            logger.ilog(self.stdout, 'inter2', self.all_inter[1].cut(1e-4)) 
+            logger.ilog(self.stdout, 'inter3', self.all_inter[2].cut(1e-4)) 
+            logger.ilog(self.stdout, 'inter4', self.all_inter[3].cut(1e-4)) 
+            logger.ilog(self.stdout, 'inter1_ave', self.all_inter_ave[0].cut(1e-4)) 
+            logger.ilog(self.stdout, 'inter2_ave', self.all_inter_ave[1].cut(1e-4)) 
+            logger.ilog(self.stdout, 'inter3_ave', self.all_inter_ave[2].cut(1e-4)) 
+            logger.ilog(self.stdout, 'inter4_ave', self.all_inter_ave[3].cut(1e-4)) 
             logger.slog(self.stdout, '\nE_GFEA(dsi): %.6f', self.E_GFEA_dsi) 
             
 

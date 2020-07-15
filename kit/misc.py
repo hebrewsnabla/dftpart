@@ -60,9 +60,18 @@ class EDict(dict):
     def cut(self, thresh):
         newdict = {}
         for k,v in self.items():
-            if abs(v[0]) > thresh:
-                k = tuple(sorted(k))
-                newdict[k] = [v[0], tuple(sorted(v[1]))]
+            if len(v)==2:
+                if abs(v[0]) > thresh:
+                    k = tuple(sorted(k))
+                    newdict[k] = [v[0], tuple(sorted(v[1]))]
+            elif len(v)==1:
+                if abs(v[0]) > thresh:
+                    newdict[k] = [v[0]]
+            else:
+                if max(list_abs(v[::2])) > thresh:
+                    k = tuple(sorted(k))
+                    newdict[k] = v
+
         return newdict
         
     def merge(self, *dicts):
@@ -97,6 +106,13 @@ class EDict(dict):
 
     def sum(self):
         return sum(self.energies())
+
+def list_abs(alist):
+    abslist = []
+    for item in alist:
+        abslist.append(abs(item))
+    return abslist
+
 
 
 def dict_cut(olddict, thresh):
