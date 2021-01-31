@@ -23,7 +23,7 @@ import scipy.linalg
 from pyscf import lib
 from pyscf.lib import logger
 from pyscf import dft
-from QCKit import logger
+from ..kit import logger
 try:
     from pyscf.dft import libxc
 except (ImportError, OSError):

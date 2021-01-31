@@ -18,7 +18,7 @@ import sys, os
 import time
 import subprocess
 
-from kit import logger, gjf_kit, misc
+from ..kit import logger, gjf_kit, misc
 from ..eda import scfeda
 from . import labc
 

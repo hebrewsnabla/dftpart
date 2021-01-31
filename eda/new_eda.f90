@@ -3,8 +3,10 @@ atom_energy, & !energyj_one, energyk_one, energyj_two, energyk_two,energy_three,
 e1, e2, e3, e4)
 implicit none 
 !integer findloc
-integer,external :: Ainclude,body3,body4,CINTcgto_spheric, CINTcgto_cart
-!real*8,external :: cint2e_sph
+integer,external :: Ainclude,body3,body4
+integer, external :: CINTcgto_spheric, CINTcgto_cart
+integer,external :: cint2e_sph, cint2e_cart
+integer :: iint
 integer i,j,k,l,tem,a,b,c,d,flag,di,dj,dk,dl
 integer af,bf,cf,df                     ! frags
 integer i0,i1,n,p
@@ -127,9 +129,9 @@ allocate(schw(nshls,nshls))
 
 do i=1,nshls
     if (cart) then
-        ncf_sh(i) = cintcgto_cart(i-1,bas)
+        ncf_sh(i) = CINTcgto_cart(i-1,bas)
     else
-        ncf_sh(i) = cintcgto_spheric(i-1,bas)
+        ncf_sh(i) = CINTcgto_spheric(i-1,bas)
     endif
 enddo
 
@@ -153,9 +155,9 @@ do i=1,nshls
         shls(4)=j-1
         allocate(buf(ni,nj,ni,nj))
         if (cart) then
-            call cint2e_cart(buf, shls, atm, 0, bas, 0, env, 0_8)
+            iint = cint2e_cart(buf, shls, atm, 0, bas, 0, env, 0_8)
         else
-            call cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
+            iint = cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
         endif
         schw(i,j)=maxval(buf)
         if (i/=j) schw(j,i)=schw(i,j)
@@ -201,9 +203,9 @@ do i=1,nshls
         if (dsqrt(schw(j,k))*dsqrt(schw(i,l))>thresh) then
             allocate(buf(dj,dk,dl,di))
             if (cart) then
-                call cint2e_cart(buf, shls, atm, 0, bas, 0, env, 0_8)
+                iint = cint2e_cart(buf, shls, atm, 0, bas, 0, env, 0_8)
             else
-                call cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
+                iint = cint2e_sph(buf, shls, atm, 0, bas, 0, env, 0_8)
             endif
             aoshell(jfi:jls,:,lfi:lls,:) = buf(:,:,:,:)
             !write(*,*) "buf\n",buf

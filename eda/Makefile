@@ -2,11 +2,11 @@ FC = f2py
 FCFLAGS_G = --fcompiler=gfortran --f90flags='-fopenmp' -lgomp
 
 ## huawei cluster
-#PYSCF = /home/liwei01/zcheng/pyscf/pyscf
-#CINT_FLAGS = -L$(PYSCF)/lib/deps/lib -lcint
+PYSCF = /share/home/srwang/pyscf-1.7.5/pyscf
+CINT_FLAGS = -L$(PYSCF)/lib/deps/lib -I$(PYSCF)/lib/deps/include -lcint
 
 ## develop machine
-CINT_FLAGS = -L/home/jean/pyscf_deps/lib -lcint 
+#CINT_FLAGS = -L/home/jean/pyscf_deps/lib -lcint 
 
 #FCFLAGS_I = --fcompiler=intelem --compiler=intelem -liomp5
 
