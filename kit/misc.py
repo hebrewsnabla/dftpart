@@ -1,5 +1,6 @@
 from .priority import *
 import numpy as np
+from copy import deepcopy
 
 def p2f(atm2bas_p):
     atm2bas_f = []
@@ -75,7 +76,7 @@ class EDict(dict):
         return newdict
         
     def merge(self, *dicts):
-        sum_edict = self
+        sum_edict = deepcopy(self)
         for d in dicts:
             for k,v in d.items():
                 if k in sum_edict.keys():
@@ -83,8 +84,15 @@ class EDict(dict):
                 else:
                     sum_edict[k] = v
         return sum_edict
+    
+    def scale(self, c):
+        sc_edict = deepcopy(self)
+        for k,v in self.items():
+            sc_edict[k] = [v[0]*c, v[1]]
+        return sc_edict
+    
     def update(self, *dicts):
-        newdict = self
+        newdict = deepcopy(self)
         for d in dicts:
             for term, e in d.items():
                 if term in newdict:

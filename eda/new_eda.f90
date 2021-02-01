@@ -1,6 +1,7 @@
 subroutine preri(atm,atml,bas,basl,env,envl,cart, nbas,nshls,dm, bas2atm, bas2frg, natm, nfrg, &
-atom_energy, & !energyj_one, energyk_one, energyj_two, energyk_two,energy_three,energy_four
-e1, e2, e3, e4)
+jk, &
+atom_energy, atom_ek, & !energyj_one, energyk_one, energyj_two, energyk_two,energy_three,energy_four
+e1, e2, e3, e4, e1k, e2k, e3k, e4k)
 implicit none 
 !integer findloc
 integer,external :: Ainclude,body3,body4
@@ -21,11 +22,10 @@ integer bas2frg(nbas)
 integer slice
 !real*8 eri(1,nao,nao,nao)
 real*8 dm(nbas,nbas)
-real*8 e_coul,e_coulA,e_coulB,e_coulC
-real*8 e_coul_j,e_coul_k
+real*8 e_coul,e_coulA,e_coulB,e_coulC, e_coul_j,e_coul_k
 !real*8 vjk(nao,nao)
 !real*8 sumE
-real*8 atom_energy(natm+1)
+real*8 atom_energy(natm+1), atom_ek(natm+1)
 real*8 tem1,tem2
 integer time1,time2,time3,time4,t1,t2,t3
 integer atml,basl,envl
@@ -37,18 +37,18 @@ real*8 aoshell(:,:,:,:)
 !real*8 energy(natm+1)
 real*8 schw(:,:)
 ! --------------------------------------------
-!real*8 energyj_one(natm)                                  
-!real*8 energyk_one(natm)                                  
-!real*8 energyj_two(natm,natm)
-!real*8 energyk_two(natm,natm)
-!real*8 energy_three(natm,natm,natm)          
-!real*8 energy_three          
-!real*8 energy_four(natm,natm,natm,natm)
-!real*8 energy_four
+integer jk
+!  jk = 0  -> e1 for j, e1k is zero
+!     = 1  -> e1 for jk, e1k is zero
+!     = 2  -> e1 for j, e1k for k
 real*8 e1(nfrg+2)
 real*8 e2(nfrg+2,nfrg+2)
 real*8 e3(nfrg+2,nfrg+2,nfrg+2)
 real*8 e4(nfrg+2,nfrg+2,nfrg+2,nfrg+2)
+real*8 e1k(nfrg+2)
+real*8 e2k(nfrg+2,nfrg+2)
+real*8 e3k(nfrg+2,nfrg+2,nfrg+2)
+real*8 e4k(nfrg+2,nfrg+2,nfrg+2,nfrg+2)
 ! --------------------------------------------
 integer ncf_sh(:),flcf_sh(:,:),cf2sh(:)
 allocatable buf
@@ -61,28 +61,24 @@ integer shls(4)
 integer ifi,ils,jfi,jls,kfi,kls,lfi,lls,ibas,kbas,jbas,lbas
 integer ni,nj
 real*8 thresh
-real*8 hf_ene
+!real*8 hf_ene
 logical ieql,ieqj,keql
 
 ! -----------------------------------------------------------------------
-!  f2py -m frame_small5 -c frame_small5.f90 --fcompiler=gfortran --f90flags='-fopenmp' -lgomp
-!  f2py -m frame_small5 -c frame_small5.f90 -L/home/liaokang/anaconda3/lib/python3.6/site-packages/pyscf/lib/ -lcint
-!  f2py -m frame_small6 -c frame_small6.f90 -L/home/liaokang/anaconda3/lib/python3.6/site-packages/pyscf/lib/ -lcint --fcompiler=gfortran --f90flags='-fopenmp' -lgomp
-!  f2py -m new_eda -c new_eda.f90  -L/home/liwei01/liaokang/anaconda3/lib/python3.6/site-packages/pyscf/lib/ -lcint --fcompiler=intelem --compiler=intelem -liomp5
 !  f2py -m new_eda -c new_eda.f90  -L/home/liwei01/zcheng/pyscf/pyscf/lib/ -lcint --fcompiler=intelem --compiler=intelem -liomp5
 ! -----------------------------------------------------------------------
 
 !f2py intent(in) :: atm,atml,bas,basl,env,envl,cart, nshls
-!f2py intent(in) :: nbas,dm,bas2atm,bas2frg,natm,nfrg
-!f2py intent(out) :: atom_energy, e1,e2,e3,e4
+!f2py intent(in) :: nbas,dm,bas2atm,bas2frg,natm,nfrg, jk
+!f2py intent(out) :: atom_energy, atom_ek, e1,e2,e3,e4, e1k, e2k, e3k, e4k
 !energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
 
 !f2py depend(nbas) :: dm, bas2atm, bas2frg
 !f2py depend(basl) :: bas
 !f2py depend(envl) :: env
 !f2py depend(atml) :: atm
-!f2py depend(natm) :: atom_energy
-!f2py depend(nfrg) :: e1,e2,e3,e4
+!f2py depend(natm) :: atom_energy, atom_ek
+!f2py depend(nfrg) :: e1,e2,e3,e4, e1k,e2k,e3k,e4k
 !,energyj_one,energyk_one,energyj_two,energyk_two,energy_three,energy_four
 
 !vjk = 0.0d0
@@ -90,31 +86,18 @@ logical ieql,ieqj,keql
 call system_clock(t1)
 e_coul = 0.0d0
 atom_energy = 0.0d0
+atom_ek = 0.0d0
 ! --------------------------------------
-!energyj_one = 0.0d0
-!energyk_one = 0.0d0
-!energyj_two = 0.0d0
-!energyk_two = 0.0d0
-!energy_three = 0.0d0
-!energy_four = 0.0d0
 e1 = 0.0d0
 e2 = 0.0d0
 e3 = 0.0d0
 e4 = 0.0d0
+e1k = 0.0d0
+e2k = 0.0d0
+e3k = 0.0d0
+e4k = 0.0d0
 ! --------------------------------------
-
-!energy = 0.0d0
-
-!sumE =0.0d0
-!hf_ene = 0.0d0
-
-!nbas = nao
-!natm = natm
-!write(*,*) 'nbas',nbas
-!do b=1,nbas
-!    write(*,*) b,bas2frg(b)
-!enddo
-
+write(*,*) 'jk', jk
 
 !------------------------------------------------------------ 
 ! obtain the map between contracted functions and contracted shells
@@ -172,10 +155,9 @@ call system_clock(t1)
 !$OMP PARALLEL DO schedule(guided) &
 !$omp default(private) &
 !$omp shared(nshls,atm,bas,env,flcf_sh, &
-!$omp dm,bas2atm,bas2frg,nbas,natm,schw,thresh,ncf_sh) &
-!$omp reduction(+:atom_energy, e1,e2,e3,e4)
-
-! reduction(+:atom_energy,energyj_one, energyk_one, energyj_two, energyk_two, energy_three, energy_four)
+!$omp dm,bas2atm,bas2frg,nbas,natm,schw,thresh,ncf_sh, jk) &
+!$omp reduction(+:atom_energy, atom_ek, e1,e2,e3,e4, e1k, e2k, e3k, e4k)
+!!! reduction(+:atom_energy,energyj_one, energyk_one, energyj_two, energyk_two, energy_three, energy_four)
 do i=1,nshls
   shls(4) = i - 1 
   ifi = flcf_sh(1,i)
@@ -216,18 +198,18 @@ do i=1,nshls
     !call system_clock(time2) 
     !write(*,*) "Calc eri time=",time2-time1
     do ibas = ifi,ils
-       a = bas2atm(ibas)
-       af = bas2frg(ibas)
-       do j =ibas,nbas
-          b = bas2atm(j)
-          bf = bas2frg(j)
-          !write(*,*) j, bf
-          ieqj = (ibas/=j)
-          tem1 = dm(j,ibas)
+      a = bas2atm(ibas)
+      af = bas2frg(ibas)
+      do j =ibas,nbas
+        b = bas2atm(j)
+        bf = bas2frg(j)
+        !write(*,*) j, bf
+        ieqj = (ibas/=j)
+        tem1 = dm(j,ibas)
           do kbas = kfi,kls
-             c = bas2atm(kbas)
-             cf = bas2frg(kbas)
-             do l=kbas,nbas
+            c = bas2atm(kbas)
+            cf = bas2frg(kbas)
+            do l=kbas,nbas
                 d = bas2atm(l)
                 df = bas2frg(l)
                 keql = (kbas/=l)
@@ -260,50 +242,65 @@ do i=1,nshls
                 
                 !if (dabs(e_coul) > 1D-12) then
                 if (.true.) then
-                  
+                  !write(*,*) 'jk', jk
                   !tem = body3(a,b,c,d,natm,m,II,JJ,KK,LL)
-
-                  atom_energy(a) = atom_energy(a) + e_coul/4.0
-                  atom_energy(b) = atom_energy(b) + e_coul/4.0
-                  atom_energy(c) = atom_energy(c) + e_coul/4.0
-                  atom_energy(d) = atom_energy(d) + e_coul/4.0
-
-                  !write(*,*) "1111"  
-                  !if ( m ==1 ) then
-                  !    energyj_one(II) = energyj_one(II) + e_coul_j 
-                  !    energyk_one(II) = energyk_one(II) + e_coul_k 
-                  !else if ( m ==2 ) then 
-                  !    energyj_two(II,JJ) = energyj_two(II,JJ) + e_coul_j 
-                  !    energyk_two(II,JJ) = energyk_two(II,JJ) + e_coul_k 
-                  !    energyj_two(JJ,II) = energyj_two(JJ,II) + e_coul_j 
-                  !    energyk_two(JJ,II) = energyk_two(JJ,II) + e_coul_k 
-                  !else if ( m ==3 ) then 
-                  !    !energy_three(II,JJ,KK) = energy_three(II,JJ,KK) + e_coul 
-                  !    energy_three = energy_three + e_coul 
-                  !else 
-                  !    !energy_four(II,JJ,KK,LL) = energy_four(II,JJ,KK,LL) + e_coul 
-                  !    energy_four = energy_four + e_coul 
-                  !endif 
+                  if (jk == 1) then 
+                    !write(*,*) 'jk1'
+                    atom_energy(a) = atom_energy(a) + e_coul/4.0
+                    atom_energy(b) = atom_energy(b) + e_coul/4.0
+                    atom_energy(c) = atom_energy(c) + e_coul/4.0
+                    atom_energy(d) = atom_energy(d) + e_coul/4.0
+                  else
+                    atom_energy(a) = atom_energy(a) + e_coul_j/4.0
+                    atom_energy(b) = atom_energy(b) + e_coul_j/4.0
+                    atom_energy(c) = atom_energy(c) + e_coul_j/4.0
+                    atom_energy(d) = atom_energy(d) + e_coul_j/4.0
+                    if (jk == 2) then
+                    !write(*,*) 'jk2'
+                      atom_ek(a) = atom_ek(a) + e_coul_k/4.0
+                      atom_ek(b) = atom_ek(b) + e_coul_k/4.0
+                      atom_ek(c) = atom_ek(c) + e_coul_k/4.0
+                      atom_ek(d) = atom_ek(d) + e_coul_k/4.0
+                    endif
+                  endif
                 tem = body4(af,bf,cf,df,m,II,JJ,KK,LL)
                 !if (bas2frg(1)==2) then
                 !    stop
                 !endif
                                
                 if (m==1) then
-                    e1(II) = e1(II) + e_coul
+                    e1(II) = e1(II) + e_coul_j
                 else if (m==2) then
-                    if ((II==3) .and. (JJ==4)) then
-                        !if (dabs(aoshell(l,kbas,j,ibas)) > 1d-15) then
-                        !write(*,*) af,bf,cf,df, e_coul, aoshell(l,kbas,j,ibas)
-                        !endif
-                    endif
-                    e2(II,JJ) = e2(II,JJ) + e_coul
+                    e2(II,JJ) = e2(II,JJ) + e_coul_j
                 else if (m==3) then
-                    e3(II,JJ,KK) = e3(II,JJ,KK) + e_coul
+                    e3(II,JJ,KK) = e3(II,JJ,KK) + e_coul_j
                 else
-                    e4(II,JJ,KK,LL) = e4(II,JJ,KK,LL) + e_coul
+                    e4(II,JJ,KK,LL) = e4(II,JJ,KK,LL) + e_coul_j
                 endif
-                  
+ 
+                if (jk .eq. 1) then
+                ! add k to e1 
+                  if (m==1) then
+                      e1(II) = e1(II) + e_coul_k
+                  else if (m==2) then
+                      e2(II,JJ) = e2(II,JJ) + e_coul_k
+                  else if (m==3) then
+                      e3(II,JJ,KK) = e3(II,JJ,KK) + e_coul_k
+                  else
+                      e4(II,JJ,KK,LL) = e4(II,JJ,KK,LL) + e_coul_k
+                  endif
+                else if (jk .eq. 2) then
+                ! add k to e1k
+                  if (m==1) then
+                      e1k(II) = e1k(II) + e_coul_k
+                  else if (m==2) then
+                      e2k(II,JJ) = e2k(II,JJ) + e_coul_k
+                  else if (m==3) then
+                      e3k(II,JJ,KK) = e3k(II,JJ,KK) + e_coul_k
+                  else
+                      e4k(II,JJ,KK,LL) = e4k(II,JJ,KK,LL) + e_coul_k
+                  endif
+                endif  
 
                 endif
           enddo

@@ -3,7 +3,7 @@ import numpy as np
 from ..kit import logger, misc
 from . import eda_inter
 
-def get_Ejk(eda, jk='jk', jktype='py'):
+def get_Ejk(eda, jk='jk2', jktype='py'):
     '''
     jk: j -> only calc E_j
         jk -> calc E_j, E_k
@@ -25,16 +25,17 @@ def get_Ejk(eda, jk='jk', jktype='py'):
         for i in range(mol.natm):
             ej = np.einsum('ij,ji',dm[atm2bas_p[i]],vj[:,atm2bas_p[i]])*.5
             atom_ej.append(ej)
-            if jk=='jk':
+            if jk[:2] == 'jk':
                 ek = np.einsum('ij,ji',dm[atm2bas_p[i]],-0.5*vk[:,atm2bas_p[i]])*.5
                 atom_ek.append(ek)
         #with open(eda.output+'-eda.log','a') as f:
         logger.log(eda.stdout,"Atom_ej=",atom_ej)
-        if jk=='jk':
+        if jk[:2] == 'jk':
             logger.log(eda.stdout,"Atom_ek=",atom_ek)
-        if jk=='jk':
+        
+        if jk[:2] == 'jk':
             atm_ejk = np.array(atom_ej), np.array(atom_ek)
-        elif jk=='j':
+        elif jk == 'j':
             atm_ejk = np.array(atom_ej)
     elif jktype=='fort': 
         #atm2bas_f = misc.p2f(atm2bas_p)
@@ -94,6 +95,6 @@ def get_Ejk(eda, jk='jk', jktype='py'):
        
         #ejk3 = np.zeros((mol.natm, mol.natm, mol.natm))
         #ejk4 = np.zeros((mol.natm, mol.natm, mol.natm, mol.natm))
-        ejk1,ejk2,ejk3,ejk4 = eda_inter.jk_inter(eda, atm2bas_p, 'jk') 
-        atm_ejk = atm_ejk +( ejk1, ejk2 , ejk3, ejk4)
+        e1,e2,e3,e4, ek1, ek2, ek3, ek4 = eda_inter.jk_inter(eda, atm2bas_p, jk) 
+        atm_ejk = atm_ejk[0], atm_ejk[1], e1, e2 , e3, e4, ek1, ek2, ek3, ek4
     return atm_ejk

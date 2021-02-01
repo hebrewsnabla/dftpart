@@ -15,7 +15,7 @@ def p2f(atm2bas_p):
     return atm2bas_f
 
 
-def jk_inter(eda, atm2bas_p, jk='jk'):
+def jk_inter(eda, atm2bas_p, jk='jk2'):
 
     atm_ = eda.mol._atm.T
     atml = np.shape(eda.mol._atm)[0]
@@ -35,38 +35,76 @@ def jk_inter(eda, atm2bas_p, jk='jk'):
     logger.slog(eda.stdout,"nao=%d",nao)    # num of cGTO
     logger.slog(eda.stdout,"nbas=%d",nbas)  # num of shells
 
-    atom_ejk, e1, e2, e3, e4 = preri(atm_,atml,bas_,basl,env_,envl, eda.cart, nao,nbas, dm, 
-        eda.bas2atm_f, eda.bas2frg, mol.natm, eda.nfrag)
+    jk_sts = ['j', 'jk1', 'jk2']
+    jkst = jk_sts.index(jk)
+    atom_ej, atom_ek, e1, e2, e3, e4, ek1, ek2, ek3, ek4 = preri(atm_,atml,bas_,basl,env_,envl, eda.cart, nao,nbas, dm, 
+        eda.bas2atm_f, eda.bas2frg, mol.natm, eda.nfrag, jkst)
     #atom_ejk = preri(atm_,atml,bas_,basl,env_,envl,nao,nbas,dm,atm2bas_f,singleitem,num1)
     #atom_energy = np.array(atom_energy)
     #print(atom_ejk)
-    ejksum = atom_ejk.sum()
-    atom_ejk = np.array(atom_ejk)[0:eda.mol.natm]
-    logger.log(eda.stdout_inter,"Atom_ejk=",atom_ejk)
+    if jk == 'jk1':
+        atom_ejk = atom_ej 
+        ejksum = atom_ejk.sum()
+        atom_ejk = np.array(atom_ejk)[0:eda.mol.natm]
+        logger.log(eda.stdout_inter,"Atom_ejk=",atom_ejk)
+    else:
+        ejsum = atom_ej.sum()
+        atom_ej = np.array(atom_ej)[0:eda.mol.natm]
+        logger.log(eda.stdout_inter,"Atom_ej=",atom_ej)
+        if jk == 'jk2':
+            eksum = atom_ek.sum()
+            atom_ek = np.array(atom_ek)[0:eda.mol.natm]
+            logger.log(eda.stdout_inter,"Atom_ek=",atom_ek)
+
     ejk1 = np.array(e1)
     ejk2 = np.array(e2)
-    #ek1 = np.array(ek1)
-    #ek2 = np.array(ek2)
     ejk3 = np.array(e3)
     ejk3 = simp3(ejk3, eda.nfrag, eda.frag2layer)
     ejk4 = np.array(e4)
     ejk4 = simp4(ejk4, eda.nfrag, eda.frag2layer)
     #ejk1 = ej1+ek1
     #ejk2 = np.triu(ej2+ek2)
-    logger.log(eda.stdout_inter,"ejk1=",ejk1)
-    logger.log(eda.stdout_inter,"ejk2=",ejk2)
-    logger.ilog(eda.stdout_inter,"ejk3=",ejk3)
-    logger.ilog(eda.stdout_inter,"ejk4=",ejk4)
+    if jk == 'jk2':
+        ek1 = np.array(ek1)
+        ek2 = np.array(ek2)
+        ek3 = np.array(ek3)
+        ek3 = simp3(ek3, eda.nfrag, eda.frag2layer)
+        ek4 = np.array(ek4)
+        ek4 = simp4(ek4, eda.nfrag, eda.frag2layer)
+    if jk == 'jk1':
+        logger.log(eda.stdout_inter,"ejk1=",ejk1)
+        logger.log(eda.stdout_inter,"ejk2=",ejk2)
+        logger.ilog(eda.stdout_inter,"ejk3=",ejk3)
+        logger.ilog(eda.stdout_inter,"ejk4=",ejk4)
+    else:
+        logger.log(eda.stdout_inter,"ej1=",ejk1)
+        logger.log(eda.stdout_inter,"ej2=",ejk2)
+        logger.ilog(eda.stdout_inter,"ej3=",ejk3)
+        logger.ilog(eda.stdout_inter,"ej4=",ejk4)
+        if jk == 'jk2':
+            logger.log(eda.stdout_inter,"ek1=",ek1)
+            logger.log(eda.stdout_inter,"ek2=",ek2)
+            logger.ilog(eda.stdout_inter,"ek3=",ek3)
+            logger.ilog(eda.stdout_inter,"ek4=",ek4)
     
     interejksum = ejk1.sum() + ejk2.sum() + sum(ejk3.energies()) + sum(ejk4.energies())
-    logger.mlog(eda.stdout_inter,"interejksum=",interejksum)
-    logger.mlog(eda.stdout_inter,"ejksum=",ejksum)
+    intereksum = ek1.sum() + ek2.sum() + sum(ek3.energies()) + sum(ek4.energies())
+    if jk == 'jk1':
+        logger.mlog(eda.stdout_inter,"interejksum=",interejksum)
+        logger.mlog(eda.stdout_inter,"ejksum=",ejksum)
+    else:
+        logger.mlog(eda.stdout_inter,"interejsum=",interejksum)
+        logger.mlog(eda.stdout_inter,"ejsum=",ejsum)
+        if jk == 'jk2':
+            logger.mlog(eda.stdout_inter,"intereksum=",intereksum)
+            logger.mlog(eda.stdout_inter,"eksum=",eksum)
+
 
     #if eda.anal:
     #    tot_aej = atom_ej.sum()
     #    ej_err = tot_aej - np.einsum('ij,ji',dm,eda.mf.get_j(mol,dm))
     #    logger.mlog(eda.stdout, "err_ej: ",(ej_err))
-    return ejk1,ejk2 , ejk3, ejk4
+    return ejk1,ejk2 , ejk3, ejk4, ek1, ek2, ek3, ek4
 
 def get_atm2sub(natm, atomlist):
     atm2sub = {}

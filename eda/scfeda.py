@@ -62,6 +62,7 @@ class EDA():
         self.showinter = False
         self.exclude_cap = True
         self.inter_thresh = 1e-7
+        self.inter_print = 1e-4
         self.conv_thresh = 1e-7
         ### GFEA ####
         self.molchgs = None # mol charges
@@ -117,7 +118,7 @@ class EDA():
                 atm_exc, atm_ej, ejxc1, ejxc2, ejxc3, ejxc4 = xceda.get_atmexc(self)
                 RR1 = e1_1 + ejxc1
                 RR2 = e1_2 + enuc2 + ejxc2
-                RR3 = e1_3 + ejxc3
+                RR3 = e1_3.merge(ejxc3)
                 RR4 = ejxc4
                 #RR_inter = eda_inter.get_RR_inter(e1_1+ejxc1,e1_2+enuc2+ejxc2)
             else:
@@ -166,10 +167,19 @@ class EDA():
         if self.showinter: 
             RR1 = misc.mat2dict(RR1, self.inter_thresh, self.frag2layer)
             RR2 = misc.mat2dict(RR2, self.inter_thresh, self.frag2layer)
+            #RR1p = RR1.cut(self.inter_print)
+            RR2p = RR2.cut(self.inter_print)
+            RR3p = RR3.cut(self.inter_print)
+            RR4p = RR4.cut(self.inter_print)
+            RR1E = sum(RR1.energies())
+            RR2E = sum(RR2.energies())
+            RR3E = sum(RR3.energies())
+            RR4E = sum(RR4.energies())
+            logger.mlog(self.stdout, 'RR1E, RR2E, RR3E, RR4E', [RR1E, RR2E, RR3E, RR4E])
             logger.ilog(self.stdout_inter, "RR1",RR1)
-            logger.ilog(self.stdout_inter, "RR2",RR2)
-            logger.ilog(self.stdout_inter, "RR3",RR3)
-            logger.ilog(self.stdout_inter, "RR4",RR4)
+            logger.ilog(self.stdout_inter, "RR2",RR2p)
+            logger.ilog(self.stdout_inter, "RR3",RR3p)
+            logger.ilog(self.stdout_inter, "RR4",RR4p)
             inter_terms = [RR1, RR2, RR3, RR4] 
             if 'charge' in self.method:
                 RC2 = misc.mat2dict(bg2, self.inter_thresh, self.frag2layer)
@@ -181,16 +191,25 @@ class EDA():
         return atm_E, totE, conv, inter_terms
 
     def get_frags(self):
-        subsys_lso, num_subsys, num_subsys_tot, frg_intot, num_atoms = gfea3.lso_parser(self.lso)
         frags_list = []
-        for cenfrg in range(1,len(frg_intot)+1):
-            f = gfea3.Frag()
-            f.atm_intot = frg_intot[cenfrg-1]
-            f.atm_insub = frg_intot[cenfrg-1]
-            f.label = cenfrg
-            f.layer = 'c'
-            frags_list.append(f)
-        self.totnum_frag = len(frg_intot)
+        if self.lso is not None:
+            subsys_lso, num_subsys, num_subsys_tot, frg_intot, num_atoms = gfea3.lso_parser(self.lso)
+            for cenfrg in range(1,len(frg_intot)+1):
+                f = gfea3.Frag()
+                f.atm_intot = frg_intot[cenfrg-1]
+                f.atm_insub = frg_intot[cenfrg-1]
+                f.label = cenfrg
+                f.layer = 'c'
+                frags_list.append(f)
+            self.totnum_frag = len(frg_intot)
+        else:
+            for i in range(self.mol.natm):
+                f = gfea3.Frag()
+                f.atm_intot = [i+1] 
+                f.atm_insub = [i+1] 
+                f.label = i+1
+                f.layer = 'c'
+                frags_list.append(f)
         self.frag_list = frags_list
         
 
