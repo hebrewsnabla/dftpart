@@ -2,6 +2,9 @@ from pyscf import scf
 import numpy as np
 from ..kit import logger, misc
 from . import eda_inter
+#import partial
+
+
 
 def get_Ejk(eda, jk='jk2', jktype='py'):
     '''
