@@ -102,7 +102,7 @@ class MayerEDA():
         logger.slog(self.stdout,"time for E1, E_nuc: %.5f\n", (t2-t1))
         if self.method[0] == 'hf':
             #if self.showinter:
-            ejk2, ej2, ek2 = get_Ejk(self, 'jk', self.jktype)
+            ejk2, ej2, ek2 = get_Ejk(self)
             #atm_ejk = atm_ej + atm_ek
             #RR1 = e1_1 + enuc1 + ejk1
             RR2 = e1_2 + enuc2 + ejk2
@@ -122,6 +122,7 @@ class MayerEDA():
             #with open(self.output+'-eda.log','a') as f:
             logger.slog(self.stdout,"time for Ej, Ek: %.5f\n", (t3-t2))
         elif dft_kit.is_dft(self.method[0]):
+            #logger.log(self.stdout,"dm",self.dm)
             #if self.showinter:
             ej2, ejxc2 = get_ejxc(self)
             #RR1 = e1_1 + ejxc1
@@ -562,10 +563,39 @@ def get_ejxc(eda):
     atom_exc = numint_sep.nr_rks_sep(ni, mol, grids, ks.xc, dm)[3]
     #with open(eda.output+'-eda.log','a') as f:
     logger.log(eda.stdout, "Atom_exc(pure):", atom_exc)
+    aoslice = gto.aoslice_by_atom(mol)
+    molfit = mol.copy()
+    molfit.basis = 'cc-pvdz-jkfit'
+    molfit.build()
+    dfbas = dft.numint.eval_ao(molfit, ks.grids.coords)
+    #exit()
+    #for ao, mask, weight, coords in ni.block_loop(mol, grids, nao, ao_deriv, max_memory):
+    #    aow = numpy.ndarray(ao[0].shape, order='F', buffer=aow)
+    #    for idm in range(nset):
+    #        rho = make_rho(idm, ao, mask, 'GGA')
+    edf = np.zeros(len(dfbas))
+    for i,dfb in enumerate(dfbas):
+        exc = ni.eval_xc(ks.xc, dfb, spin=0)[0]
+        den = dfb * ks.grids.weight
+        nelec = den.sum()
+        edf[i] = np.dot(den, exc)
+    S = molfit.get_ovlp()
+    xi = einsum('ij,j->i',np.linalg.inv(S), edf)
+    ao = dft.numint.eval_ao(mol, ks.grids.coords)
+    #exc2 = np.zeros((mol.natm, mol.natm))
+    #for i in range(mol.natm):
+    #    ao0i, ao1i = aoslice[i][2:]
+    #    for j in range(mol.natm):
+    #        ao0j, ao1j = aoslice[j][2:]
+    #        dmij = np.zeros_like(dm)
+    #        dmij[ao0i:ao1i, ao0j:ao1j] = dm[ao0i:ao1i, ao0j:ao1j]
+    #        exc2[i,j] = dft.numint.nr_rks(ni, mol, grids, ks.xc, dmij)[1]
     if eda.verbose > 5:
         tot_aexc = atom_exc.sum()
-        err_exc = tot_aexc - dft.numint.nr_rks(ni,mol,ks.grids,ks.xc,dm)[1]
-        logger.mlog(eda.stdout,"err_exc",err_exc)
+        #tot_aexc2 = exc2.sum()
+        tot_exc = dft.numint.nr_rks(ni,mol,ks.grids,ks.xc,dm)[1]
+        logger.mlog(eda.stdout,"err_exc", tot_exc - tot_aexc)
+        #logger.mlog(eda.stdout,"err_exc", tot_exc - tot_aexc2)
     t2 = time.time()
     #with open(eda.output+'-eda.log','a') as f:
     logger.slog(eda.stdout, "time for Exc: %.5f\n", (t2-t1))

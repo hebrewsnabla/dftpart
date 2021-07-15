@@ -4,7 +4,7 @@ from pyscf import lib
 with lib.with_omp_threads(4):
     test1 = mayer.MayerEDA()
     test1.gjf = 'c3.gjf' # provide geom, charge, multiplicity
-    test1.method = ['b3lyp','6-31gs'] 
+    test1.method = ['hf','6-31gs'] 
     test1.output = 'c3'
     test1.verbose = 9
     #test1.build()

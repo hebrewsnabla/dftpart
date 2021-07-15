@@ -2,6 +2,7 @@
 *.chk
 *.pyc
 tmp*
+core*
 mp_example/
 test_2body/*
 !test_2body/c8/
