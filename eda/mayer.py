@@ -8,11 +8,12 @@ from pyscf.gto.mole import inter_distance
 from pyscf.scf import _vhf
 
 # dftpart module
-from .new_eda import preri
-from .h1e_new import h1e, bgh1e, h1e_inter, bgh1e_inter
-from . import xceda, jkeda, eda_inter, bg
+#from .new_eda import preri
+#from .h1e_new import h1e, bgh1e, h1e_inter, bgh1e_inter
+#from . import xceda, jkeda, eda_inter, bg
+from . import numint_sep, gen_grid_sep
 from ..kit import logger, dft_kit, gjf_kit, misc
-from ..gfea import gfea3
+#from ..gfea import gfea3
 
 # others
 import numpy as np
@@ -91,7 +92,7 @@ class MayerEDA():
         t1 = time.time()
         #atm2bas_f, atm2bas_p = get_atm2bas(self.mol)
         #if self.showinter:
-        atm_e1, e1_2 = get_E1(self)
+        e1_2 = get_E1(self)
         atm_enuc, enuc2 = get_Enuc(self)
         #else:
         #    atm_e1 = get_E1(self)
@@ -101,7 +102,7 @@ class MayerEDA():
         logger.slog(self.stdout,"time for E1, E_nuc: %.5f\n", (t2-t1))
         if self.method[0] == 'hf':
             #if self.showinter:
-            ejk2 = get_Ejk(self, 'jk', self.jktype)
+            ejk2, ej2, ek2 = get_Ejk(self, 'jk', self.jktype)
             #atm_ejk = atm_ej + atm_ek
             #RR1 = e1_1 + enuc1 + ejk1
             RR2 = e1_2 + enuc2 + ejk2
@@ -122,15 +123,18 @@ class MayerEDA():
             logger.slog(self.stdout,"time for Ej, Ek: %.5f\n", (t3-t2))
         elif dft_kit.is_dft(self.method[0]):
             #if self.showinter:
-            atm_exc, atm_ej, ejxc1, ejxc2 = xceda.get_atmexc(self)
-            RR1 = e1_1 + ejxc1
+            ej2, ejxc2 = get_ejxc(self)
+            #RR1 = e1_1 + ejxc1
             RR2 = e1_2 + enuc2 + ejxc2
+            logger.log(self.stdout,"RR2",RR2)
             #    RR3 = e1_3.merge(ejxc3)
             #    RR4 = ejxc4
             #    #RR_inter = eda_inter.get_RR_inter(e1_1+ejxc1,e1_2+enuc2+ejxc2)
             #else:
             #    atm_exc, atm_ej = xceda.get_atmexc(self)
-            atm_E = atm_e1 + atm_enuc + atm_ej + atm_exc
+            #atm_E = atm_e1 + atm_enuc + atm_ej + atm_exc
+            t3 = time.time()
+            logger.slog(self.stdout,"time for Ej, Exc: %.5f\n", (t3-t2))
         if 'charge' in self.method:
             #if self.showinter:
             bg_corrxn, bg_corrxn_fake, bg2,bg3, bgbg2 = get_bg_corrxn(self, 'charge')
@@ -167,8 +171,11 @@ class MayerEDA():
             conv = abs(totE_fake - scfE) < self.conv_thresh
         ok = ['FAIL','OK']
         logger.slog(self.stdout,"EDA convergence -- "+ok[conv])
+        t4 = time.time()
+        logger.slog(self.stdout,"time for MayerEDA: %.5f\n", (t4-t1))
 
-        exit()
+        #exit()
+        '''
         for i in range(atm_E.shape[0]):
             logger.slog(self.stdout,"%s %i %16.10f", self.mol.atom_symbol(i),i+1,atm_E[i])
         inter_terms = []
@@ -196,30 +203,9 @@ class MayerEDA():
                 logger.ilog(self.stdout_inter, "RC3",RC3)
                 inter_terms.append(RC2) 
                 inter_terms.append(RC3)
-        return atm_E, totE, conv, inter_terms
-
-    def get_frags(self):
-        frags_list = []
-        if self.lso is not None:
-            subsys_lso, num_subsys, num_subsys_tot, frg_intot, num_atoms = gfea3.lso_parser(self.lso)
-            for cenfrg in range(1,len(frg_intot)+1):
-                f = gfea3.Frag()
-                f.atm_intot = frg_intot[cenfrg-1]
-                f.atm_insub = frg_intot[cenfrg-1]
-                f.label = cenfrg
-                f.layer = 'c'
-                frags_list.append(f)
-            self.totnum_frag = len(frg_intot)
-        else:
-            for i in range(self.mol.natm):
-                f = gfea3.Frag()
-                f.atm_intot = [i+1] 
-                f.atm_insub = [i+1] 
-                f.label = i+1
-                f.layer = 'c'
-                frags_list.append(f)
-        self.frag_list = frags_list
-        
+                '''
+        return totE, conv, RR2
+     
 
 
 def build(eda, gjf, method):
@@ -267,9 +253,9 @@ def build(eda, gjf, method):
 
     os.system("echo '' > "+eda.output+'-eda.log')
     eda.stdout = open(eda.output+'-eda.log','a')
-    if eda.showinter:
-        os.system("echo '' > "+eda.output+'-inter.log')
-        eda.stdout_inter = open(eda.output+'-inter.log','a')
+#    if eda.showinter:
+#        os.system("echo '' > "+eda.output+'-inter.log')
+#        eda.stdout_inter = open(eda.output+'-inter.log','a')
     #with open(self.output+'-eda.log','a') as f:
     logger.mlog(eda.stdout,"method,basis: ", eda.method)
     eda.atm2bas_f, eda.atm2bas_p = get_atm2bas(eda.mol)        
@@ -278,58 +264,38 @@ def build(eda, gjf, method):
     eda.bas2atm, eda.bas2atm_f = get_bas2atm(eda.atm2bas_f, eda.nao, eda.mol.natm) 
     #     atm starts from 0
     # _f: atm starts from 1
-    if eda.showinter:
-        if eda.frag_list is None:
-            eda.get_frags()
-        eda.bas2frg = get_bas2frg(eda.bas2atm, eda.frag_list)           # frg starts from 1
-        eda.atm2frg = get_atm2frg(mol.natm, eda.frag_list)
-        eda.nfrag = len(eda.frag_list)
-        eda.ncap = 0
-        eda.capatoms = []
-        eda.frag2layer = {}
-        for f in eda.frag_list:
-            eda.frag2layer[f.label] = f.layer
-            if f.layer == 'cap': 
-                eda.ncap += 1
-                eda.capatoms.append(f.atm_insub[0])
-        eda.capbas_p = []
-        eda.capbas_f = []
-        for i in eda.capatoms:
-            eda.capbas_p.append(eda.atm2bas_p[i-1])
-            eda.capbas_f.append(eda.atm2bas_f[i-1])
+#    if eda.showinter:
+#        if eda.frag_list is None:
+#            eda.get_frags()
+#        eda.bas2frg = get_bas2frg(eda.bas2atm, eda.frag_list)           # frg starts from 1
+#       eda.atm2frg = get_atm2frg(mol.natm, eda.frag_list)
+#        eda.nfrag = len(eda.frag_list)
+#        eda.ncap = 0
+#        eda.capatoms = []
+#        eda.frag2layer = {}
+#        for f in eda.frag_list:
+#            eda.frag2layer[f.label] = f.layer
+#            if f.layer == 'cap': 
+#                eda.ncap += 1
+#                eda.capatoms.append(f.atm_insub[0])
+#        eda.capbas_p = []
+#        eda.capbas_f = []
+#        for i in eda.capatoms:
+#            eda.capbas_p.append(eda.atm2bas_p[i-1])
+#            eda.capbas_f.append(eda.atm2bas_f[i-1])
     if eda.verbose >= 6:
         logger.mlog(eda.stdout, "atm2bas_f", eda.atm2bas_f)
         logger.mlog(eda.stdout, "atm2bas_p", eda.atm2bas_p)
         #print(eda.bas2atm)
         logger.mlog(eda.stdout, "bas2atm", eda.bas2atm)
-        if eda.showinter:
-            logger.mlog(eda.stdout, "bas2frg", eda.bas2frg)
-            logger.mlog(eda.stdout, "atm2frg", eda.atm2frg)
-            logger.mlog(eda.stdout, "cap atoms", eda.capatoms)
-            logger.mlog(eda.stdout, "cap basis_p", eda.capbas_p)
+#        if eda.showinter:
+#            logger.mlog(eda.stdout, "bas2frg", eda.bas2frg)
+#            logger.mlog(eda.stdout, "atm2frg", eda.atm2frg)
+#            logger.mlog(eda.stdout, "cap atoms", eda.capatoms)
+#            logger.mlog(eda.stdout, "cap basis_p", eda.capbas_p)
       
     eda.built = True
     return eda
-
-def get_atm2frg(natm, frag_list):
-    atm2frg = []
-    for a in range(natm):
-        for f in frag_list:
-            if f.layer == 'q':
-                continue
-            if (a+1 in f.atm_insub):
-                atm2frg.append(f.label)
-    return atm2frg
-
-def get_bas2frg(bas2atm, frag_list):
-    bas2frg = []
-    for atm in bas2atm:
-        for f in frag_list:
-            if f.layer == 'q': 
-                continue
-            if (atm+1 in f.atm_insub):
-                bas2frg.append(f.label)
-    return bas2frg
 
 
 def get_atm2bas(mol):
@@ -462,7 +428,7 @@ def get_E1(eda):
     dm = eda.dm
     nao = eda.nao
     #atm2bas = eda.atm2bas_p
-    bas2atm = eda.bas2atm #get_bas2atm(atm2bas,nao,mol.natm)
+    #bas2atm = eda.bas2atm #get_bas2atm(atm2bas,nao,mol.natm)
     #if eda.showinter:
     #    bas2frg = eda.bas2frg
     #    atm2frg = eda.atm2frg
@@ -524,17 +490,13 @@ def get_E1(eda):
     e1_2 = np.triu(e1_2) + np.tril(e1_2, -1).T 
     #print(e1_2)
     e1_2 += kin2
-    #with open(eda.output+'-eda.log','a') as f:
-    #logger.log(eda.stdout,"atom_1enuc=",atom_1enuc)
-    atm_e1 = np.zeros(mol.natm)
-    #logger.log(eda.stdout,"atom_e1=",atm_e1)
     if eda.showinter:
         #logger.log(eda.stdout_inter,"e1_1",e1_1)
         logger.log(eda.stdout,"e1_2",e1_2)
         #logger.ilog(eda.stdout_inter,"e1_3 ",e1_3)
     #with open(eda.output+'-eda.log','a') as f:
 
-    return atm_e1, e1_2
+    return e1_2
 
 
 def get_Enuc(eda):
@@ -560,11 +522,11 @@ def get_Enuc(eda):
 
     return atm_enucnuc, enuc2
 
-def get_Ejk(eda, jk='jk', jktype='py'):
+def get_Ejk(eda):
     mol = eda.mol
     dm = eda.dm
     aoslice = gto.aoslice_by_atom(mol)  
-    atm2bas = eda.atm2bas_p
+    #atm2bas = eda.atm2bas_p
     ej_2 = np.zeros((mol.natm, mol.natm))
     ek_2 = np.zeros((mol.natm, mol.natm))
     for i in range(mol.natm):
@@ -580,9 +542,59 @@ def get_Ejk(eda, jk='jk', jktype='py'):
             ej_2[i,j] = ej
             ek_2[i,j] = ek
 
-    ejk2 = ej_2 + ek_2
-    ejk2 = ejk2 + np.triu(ejk2, 1)
+    ej2 = ej_2 + np.triu(ej_2, 1)
+    ek2 = ek_2 + np.triu(ek_2, 1)
+    ejk2 = ej2 + ek2
     #print(ejk2)
     logger.log(eda.stdout,"ejk2",ejk2)
-    return ejk2
+    return ejk2, ej2, ek2
 
+
+def get_ejxc(eda):
+    t1 = time.time()
+    dm = eda.dm
+    ks = eda.mf
+    ni = ks._numint
+    mol = ks.mol
+    grids = gen_grid_sep.Grids(ks.mol)
+    if 'ultrafine' in eda.method:
+        grids.atom_grid = (99, 590)
+    atom_exc = numint_sep.nr_rks_sep(ni, mol, grids, ks.xc, dm)[3]
+    #with open(eda.output+'-eda.log','a') as f:
+    logger.log(eda.stdout, "Atom_exc(pure):", atom_exc)
+    if eda.verbose > 5:
+        tot_aexc = atom_exc.sum()
+        err_exc = tot_aexc - dft.numint.nr_rks(ni,mol,ks.grids,ks.xc,dm)[1]
+        logger.mlog(eda.stdout,"err_exc",err_exc)
+    t2 = time.time()
+    #with open(eda.output+'-eda.log','a') as f:
+    logger.slog(eda.stdout, "time for Exc: %.5f\n", (t2-t1))
+    omega, alpha, hyb = ni.rsh_and_hybrid_coeff(ks.xc, mol.spin)
+    if ks.omega is not None: omega = ks.omega
+    #if abs(hyb) > 1e-10:
+    if True:
+        #if eda.showinter:
+        ejk2, ej2, ek2 = get_Ejk(eda)
+        #    tmp_exc = np.hstack((atom_exc, np.zeros(2)))
+        #    ejxc1 = ej1 + hyb*ek1 + tmp_exc
+        ejxc2 = ej2 + hyb*ek2 + np.diag(atom_exc)
+        #    ejxc3 = ej3.merge(ek3.scale(hyb))
+        #    ejxc4 = ej4.merge(ek4.scale(hyb))
+        #else:
+        #    atom_ej, atom_ek = jkeda.get_Ejk(eda, 'jk2')
+        #atom_exc += hyb * atom_ek
+        #if abs(omega) > 1e-10:
+        #    eklr = get_eklr(mol, dm, omega, hermi=1)*(alpha-hyb)
+        #    atom_exc += eklr
+        #with open(eda.output+'-eda.log','a') as f:
+        #logger.log(eda.stdout, "Atom_exc(hydrid):", atom_exc)
+        logger.log(eda.stdout,"ejxc2",ejxc2)
+        t3 = time.time()
+        #with open(eda.output+'-eda.log','a') as f:
+        logger.slog(eda.stdout, "time for Ej, Ek: %.5f\n", (t3-t2))
+    else:
+        atom_ej = scfeda.get_Ejk(eda,atm2bas,'j')
+        t3 = time.time()
+        #with open(eda.output+'-eda.log','a') as f:
+        #logger.slog(eda.stdout, "time for Ej: %.5f\n", (t3-t2))
+    return ej2, ejxc2
